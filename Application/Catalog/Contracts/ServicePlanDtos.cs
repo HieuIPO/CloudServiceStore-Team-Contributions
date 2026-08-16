@@ -48,7 +48,6 @@ public class ServicePlanDetailDto
 // PlanPrice DTOs
 public class CreatePlanPriceRequest
 {
-    public Guid ServicePlanId { get; set; }
     public decimal Price { get; set; }
     public required string Currency { get; set; } = "VND";
     public BillingCycle BillingCycle { get; set; }
