@@ -1,4 +1,4 @@
-const BASE_URL = "https://localhost:7225/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://localhost:7225/api/v1";
 
 export const fetchCategories = async () => {
     try {
