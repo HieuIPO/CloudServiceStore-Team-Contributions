@@ -71,7 +71,7 @@ public class PromotionsController : ControllerBase
         var promotion = await _promotionService.GetByIdAsync(id);
         
         // Example URL format that frontend might use to apply promotion
-        var url = $"https://cloudservicestore.com/apply-promo?code={promotion.Code}";
+        var url = $"https://cloudservicestore.com/apply-promo?code={Uri.EscapeDataString(promotion.Code)}";
         
         var qrCodeBytes = _qrCodeGenerator.GenerateQrCode(url);
         
