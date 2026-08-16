@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Cloud network performance</title>
+  <desc id="desc">A high-performance cloud network with connected nodes.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbfdff"/><stop offset=".48" stop-color="#e0f2fe"/><stop offset="1" stop-color="#ddd6fe"/></linearGradient>
+    <linearGradient id="node" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2563eb"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="42"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1290" cy="220" r="210" fill="#fff" opacity=".62" filter="url(#blur)"/>
+  <circle cx="1180" cy="790" r="290" fill="#38bdf8" opacity=".18" filter="url(#blur)"/>
+  <g stroke="#2563eb" stroke-width="5" stroke-linecap="round" opacity=".32">
+    <path d="M930 240 1110 385 1320 230 1450 430 1270 620 1050 580 1110 385"/>
+    <path d="M930 240 1050 580"/>
+    <path d="M1320 230 1270 620"/>
+  </g>
+  <g fill="url(#node)" stroke="#fff" stroke-width="8">
+    <circle cx="930" cy="240" r="34"/><circle cx="1110" cy="385" r="42"/><circle cx="1320" cy="230" r="34"/><circle cx="1450" cy="430" r="40"/><circle cx="1270" cy="620" r="45"/><circle cx="1050" cy="580" r="34"/>
+  </g>
+  <g transform="translate(820 665)">
+    <rect width="610" height="80" rx="40" fill="#0f3b70" opacity=".86"/>
+    <circle cx="46" cy="40" r="13" fill="#34d399"/>
+    <rect x="82" y="29" width="190" height="22" rx="11" fill="#fff" opacity=".72"/>
+    <rect x="330" y="29" width="120" height="22" rx="11" fill="#60a5fa" opacity=".75"/>
+    <rect x="480" y="29" width="82" height="22" rx="11" fill="#a78bfa" opacity=".8"/>
+  </g>
+  <path d="M370 190c70-92 224-90 286 8 93-36 204 31 204 136H270c0-94 56-150 100-144Z" fill="#fff" fill-opacity=".58"/>
+</svg>

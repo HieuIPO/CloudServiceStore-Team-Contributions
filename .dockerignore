@@ -1,0 +1,12 @@
+.git
+.github
+.dotnet
+**/bin
+**/obj
+frontend
+tests
+tmp
+*.md
+*.pdf
+*.docx
+.env

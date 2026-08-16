@@ -1,0 +1,24 @@
+# .NET
+bin/
+obj/
+TestResults/
+coverage/
+.vs/
+*.csproj.user
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.next-branding-build/
+frontend/out/
+output/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+appsettings.Development.local.json
+
+# Local SDK and generated assets
+.dotnet/
+tmp/

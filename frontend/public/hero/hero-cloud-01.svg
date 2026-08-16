@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Cloud infrastructure</title>
+  <desc id="desc">Bright cloud infrastructure with connected server racks.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5fbff"/><stop offset=".55" stop-color="#dceeff"/><stop offset="1" stop-color="#b9dbff"/></linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff" stop-opacity=".88"/><stop offset="1" stop-color="#d8edff" stop-opacity=".66"/></linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="35"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="1260" cy="130" r="170" fill="#fff" opacity=".6" filter="url(#blur)"/>
+  <circle cx="1470" cy="720" r="260" fill="#8dd7ff" opacity=".28" filter="url(#blur)"/>
+  <path d="M820 300h520M900 420h410M1000 540h360" stroke="#5ba9e8" stroke-opacity=".28" stroke-width="3" stroke-dasharray="10 14"/>
+  <g fill="url(#panel)" stroke="#fff" stroke-opacity=".9" stroke-width="3">
+    <rect x="860" y="185" width="230" height="180" rx="28"/>
+    <rect x="1120" y="360" width="270" height="210" rx="30"/>
+    <rect x="1280" y="150" width="200" height="150" rx="25"/>
+  </g>
+  <g fill="#2563eb" opacity=".85"><circle cx="920" cy="245" r="10"/><circle cx="965" cy="245" r="10"/><circle cx="1010" cy="245" r="10"/><circle cx="1190" cy="435" r="10"/><circle cx="1235" cy="435" r="10"/><circle cx="1280" cy="435" r="10"/></g>
+  <g stroke="#0ea5e9" stroke-width="6" stroke-linecap="round" opacity=".6"><path d="M1090 270 1210 405"/><path d="M1330 300 1300 405"/><path d="M1090 330 1120 430"/></g>
+  <g transform="translate(1190 625)">
+    <rect width="330" height="130" rx="28" fill="#0f4c81" opacity=".88"/>
+    <rect x="26" y="28" width="278" height="13" rx="6" fill="#9be7ff" opacity=".8"/>
+    <rect x="26" y="57" width="220" height="13" rx="6" fill="#60a5fa" opacity=".7"/>
+    <rect x="26" y="86" width="150" height="13" rx="6" fill="#fff" opacity=".5"/>
+    <circle cx="280" cy="92" r="12" fill="#34d399"/>
+  </g>
+</svg>
