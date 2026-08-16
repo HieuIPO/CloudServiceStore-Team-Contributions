@@ -46,7 +46,7 @@ Khi chạy API không qua Docker, đặt `Jwt__SigningKey` (ít nhất 32 ký t�
 
 ## Yêu cầu dịch vụ
 
-- Public gửi yêu cầu tư vấn tại `/order` qua `POST /api/v1/orders`; endpoint được giới hạn tần suất theo IP.
+- Public có thể xem catalog và mở form tại `/order`; để gửi yêu cầu, người dùng phải đăng ký/đăng nhập tài khoản `Customer`. Backend gắn yêu cầu với đúng tài khoản Customer qua `POST /api/v1/orders` và giới hạn tần suất theo IP.
 - Mỗi yêu cầu chụp tên/cấu hình gói, giá gốc, giá sau khuyến mãi, mã khuyến mãi và loại tiền tại thời điểm gửi.
 - Admin và Editor quản lý tại `/admin/orders`, có tìm kiếm, lọc, phân trang, chi tiết và lịch sử đổi trạng thái.
 - `GET /api/v1/orders`, `GET /api/v1/orders/{id}` và `PATCH /api/v1/orders/{id}/status` yêu cầu policy `ManageOrders`.
@@ -54,7 +54,7 @@ Khi chạy API không qua Docker, đặt `Jwt__SigningKey` (ít nhất 32 ký t�
 
 ## Chương trình Affiliate
 
-- Public xem chính sách và gửi hồ sơ hợp tác tại `/affiliate`; `POST /api/v1/affiliate-applications` được giới hạn tần suất theo IP.
+- Public xem chính sách tại `/affiliate`; để gửi hồ sơ hợp tác, người dùng phải đăng ký/đăng nhập tài khoản `Customer`. Backend gắn hồ sơ với đúng tài khoản Customer qua `POST /api/v1/affiliate-applications` và giới hạn tần suất theo IP.
 - Hồ sơ trùng email trong vòng 30 ngày bị từ chối; trạng thái đi theo luồng `Pending` → `UnderReview` → `Approved`/`Rejected` và lưu lịch sử.
 - Admin và Editor quản lý hồ sơ tại `/admin/affiliates`; chỉ Admin được chỉnh hoặc ẩn/hiện nội dung chương trình.
 - Các thao tác tạo hồ sơ, đổi trạng thái và cập nhật chính sách đều ghi audit log.
@@ -81,7 +81,7 @@ Khi chạy API không qua Docker, đặt `Jwt__SigningKey` (ít nhất 32 ký t�
 Kịch bản demo đề xuất:
 
 1. Mở `/`, `/services`, `/pricing` để giới thiệu Landing, Catalog, Promotion và QR.
-2. Gửi một yêu cầu tư vấn tại `/order`; đăng nhập Editor để xử lý tại `/admin/orders`.
+2. Đăng ký/đăng nhập tài khoản Customer, gửi một yêu cầu tư vấn tại `/order`; đăng nhập Editor để xử lý tại `/admin/orders`.
 3. Soạn và publish Markdown tại `/admin/news`, sau đó mở bài ở `/news`.
-4. Gửi hồ sơ tại `/affiliate`; dùng Editor để review tại `/admin/affiliates`.
+4. Đăng ký/đăng nhập tài khoản Customer, gửi hồ sơ tại `/affiliate`; dùng Editor để review tại `/admin/affiliates`.
 5. Đăng nhập Admin, mở `/admin/dashboard`, xuất Excel và kiểm tra sự kiện tại `/admin/audit-logs`.
