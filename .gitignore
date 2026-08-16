@@ -1,9 +1,30 @@
-.vs/
-bin/
-obj/
 node_modules/
+/dist
+/build
+npm-debug.log
+yarn-error.log
 .env
-appsettings.Development.json
+.next/
+
+# .NET / C#
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+.vs/
 *.user
+*.suo
 *.userosscache
 *.sln.docstates
+*.log
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Mac
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

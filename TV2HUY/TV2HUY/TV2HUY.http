@@ -1,0 +1,6 @@
+@TV2HUY_HostAddress = http://localhost:5075
+
+GET {{TV2HUY_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
