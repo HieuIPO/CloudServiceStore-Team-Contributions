@@ -52,11 +52,13 @@ public class PromotionService : IPromotionService
         return new PagedResult<PromotionDto> { Items = dtos, TotalCount = totalCount, PageIndex = query.PageIndex, PageSize = query.PageSize };
     }
 
-    public async Task<PromotionDto> CreateAsync(CreatePromotionRequest request, CancellationToken cancellationToken = default)
-    {
-        var existing = await _promotionRepository.GetByCodeAsync(request.Code, cancellationToken);
-        if (existing != null)
-            throw new DomainException($"Promotion with code '{request.Code}' already exists.");
+public async Task<PromotionDto> CreateAsync(CreatePromotionRequest request, CancellationToken cancellationToken = default)
+{
+    var normalizedCode = request.Code.ToUpperInvariant();
+
+    var existing = await _promotionRepository.GetByCodeAsync(normalizedCode, cancellationToken);
+    if (existing != null)
+        throw new DomainException($"Promotion with code '{normalizedCode}' already exists.");
 
         if (request.DiscountValue < 0)
             throw new DomainException("Discount value cannot be negative.");
