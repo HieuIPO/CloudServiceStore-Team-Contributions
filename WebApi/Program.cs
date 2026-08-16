@@ -46,10 +46,10 @@ builder.Services.AddScoped<IQrCodeGenerator, QrCodeGenerator>();
 // Policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("ManageCatalog", policy => policy.RequireAssertion(_ => true)); // Mock policy for now
-    options.AddPolicy("ManagePricing", policy => policy.RequireAssertion(_ => true));
-    options.AddPolicy("ManagePromotions", policy => policy.RequireAssertion(_ => true));
-    options.AddPolicy("ManageQrCodes", policy => policy.RequireAssertion(_ => true));
+    options.AddPolicy("ManageCatalog", policy => policy.RequireAuthenticatedUser());
+    options.AddPolicy("ManagePricing", policy => policy.RequireAuthenticatedUser());
+    options.AddPolicy("ManagePromotions", policy => policy.RequireAuthenticatedUser());
+    options.AddPolicy("ManageQrCodes", policy => policy.RequireAuthenticatedUser());
 });
 
 var app = builder.Build();
@@ -67,8 +67,9 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     // Apply pending migrations automatically
     context.Database.Migrate();
