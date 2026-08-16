@@ -67,8 +67,9 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsDevelopment())
 {
+    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     // Apply pending migrations automatically
     context.Database.Migrate();
