@@ -1,4 +1,5 @@
 using CloudServiceStore.Domain.Entities;
+using CloudServiceStore.Domain.Entities.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -39,7 +40,7 @@ public sealed class ServicePlanFeatureConfiguration : IEntityTypeConfiguration<S
         builder.Property(x => x.DisplayName).HasMaxLength(120).IsRequired();
         builder.Property(x => x.Value).HasMaxLength(160).IsRequired();
         builder.Property(x => x.Unit).HasMaxLength(30);
-        builder.HasIndex(x => new { x.ServicePlanId, x.FeatureKey }).IsUnique();
+        builder.HasKey(x => new { x.ServicePlanId, x.FeatureKey });
         builder.HasOne(x => x.ServicePlan).WithMany(x => x.Features).HasForeignKey(x => x.ServicePlanId).OnDelete(DeleteBehavior.Cascade);
     }
 }

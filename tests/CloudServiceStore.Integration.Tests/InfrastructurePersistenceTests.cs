@@ -1,6 +1,8 @@
 using CloudServiceStore.Application.Catalog;
 using CloudServiceStore.Application.News;
+using CloudServiceStore.Domain.Common;
 using CloudServiceStore.Domain.Entities;
+using CloudServiceStore.Domain.Entities.Catalog;
 using CloudServiceStore.Domain.Enums;
 using CloudServiceStore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

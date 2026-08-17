@@ -1,5 +1,6 @@
 using CloudServiceStore.Domain.Common;
 using CloudServiceStore.Domain.Entities;
+using CloudServiceStore.Domain.Entities.Catalog;
 using CloudServiceStore.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 

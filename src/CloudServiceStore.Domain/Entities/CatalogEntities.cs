@@ -1,4 +1,5 @@
 using CloudServiceStore.Domain.Common;
+using CloudServiceStore.Domain.Entities.Catalog;
 using CloudServiceStore.Domain.Enums;
 
 namespace CloudServiceStore.Domain.Entities;
@@ -28,16 +29,7 @@ public sealed class ServicePlan : SoftDeletableEntity
     public ICollection<PromotionPlan> PromotionPlans { get; } = new List<PromotionPlan>();
 }
 
-public sealed class ServicePlanFeature : AuditableEntity
-{
-    public Guid ServicePlanId { get; set; }
-    public ServicePlan ServicePlan { get; set; } = null!;
-    public string FeatureKey { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-    public string? Unit { get; set; }
-    public int DisplayOrder { get; set; }
-}
+
 
 public sealed class PlanPrice : AuditableEntity
 {

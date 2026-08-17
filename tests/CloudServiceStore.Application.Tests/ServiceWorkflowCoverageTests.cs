@@ -2,6 +2,7 @@ using CloudServiceStore.Application.Catalog;
 using CloudServiceStore.Application.Landing;
 using CloudServiceStore.Application.News;
 using CloudServiceStore.Domain.Entities;
+using CloudServiceStore.Domain.Entities.Catalog;
 using CloudServiceStore.Domain.Enums;
 using Moq;
 
