@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Cloud storage and security</title>
+  <desc id="desc">Secure cloud storage with a shield and connected data blocks.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fdff"/><stop offset=".52" stop-color="#d7f4ff"/><stop offset="1" stop-color="#b6e6e5"/></linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0e7490"/><stop offset="1" stop-color="#2563eb"/></linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="45"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1230" cy="180" r="220" fill="#fff" opacity=".55" filter="url(#blur)"/>
+  <circle cx="1450" cy="750" r="260" fill="#22c55e" opacity=".15" filter="url(#blur)"/>
+  <g transform="translate(1040 100)">
+    <path d="M230 15 475 105v190c0 190-137 306-245 360C122 601-15 485-15 295V105Z" fill="url(#shield)" opacity=".96"/>
+    <path d="m155 315 62 62 130-145" fill="none" stroke="#d9f99d" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M230 15 475 105" stroke="#fff" stroke-opacity=".45" stroke-width="8"/>
+  </g>
+  <g transform="translate(785 560)">
+    <rect x="0" y="55" width="150" height="105" rx="22" fill="#fff" fill-opacity=".75" stroke="#fff" stroke-width="4"/>
+    <rect x="190" y="0" width="150" height="105" rx="22" fill="#fff" fill-opacity=".8" stroke="#fff" stroke-width="4"/>
+    <rect x="380" y="55" width="150" height="105" rx="22" fill="#fff" fill-opacity=".75" stroke="#fff" stroke-width="4"/>
+    <path d="M150 105h40M340 55h40" stroke="#0e7490" stroke-width="7" stroke-linecap="round"/>
+    <g fill="#14b8a6"><circle cx="48" cy="98" r="10"/><circle cx="238" cy="43" r="10"/><circle cx="428" cy="98" r="10"/></g>
+    <g fill="#2563eb" opacity=".6"><rect x="35" y="130" width="80" height="10" rx="5"/><rect x="225" y="75" width="80" height="10" rx="5"/><rect x="415" y="130" width="80" height="10" rx="5"/></g>
+  </g>
+  <g fill="#0e7490" opacity=".25"><circle cx="440" cy="205" r="12"/><circle cx="575" cy="325" r="19"/><circle cx="690" cy="220" r="10"/></g>
+  <path d="M440 205 575 325 690 220" fill="none" stroke="#0e7490" stroke-width="4" stroke-dasharray="10 15" opacity=".35"/>
+</svg>
