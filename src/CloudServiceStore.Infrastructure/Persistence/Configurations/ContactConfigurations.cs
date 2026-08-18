@@ -12,18 +12,19 @@ public sealed class ContactRequestConfiguration : IEntityTypeConfiguration<Conta
         builder.HasKey(x => x.Id);
         builder.Property(x => x.FullName).HasMaxLength(160).IsRequired();
         builder.Property(x => x.Email).HasMaxLength(256).IsRequired();
-        builder.Property(x => x.PhoneNumber).HasMaxLength(32).IsRequired();
+        builder.Property(x => x.PhoneNumber).HasMaxLength(30).IsRequired();
         builder.Property(x => x.CompanyName).HasMaxLength(160);
         builder.Property(x => x.Subject).HasMaxLength(180).IsRequired();
         builder.Property(x => x.Message).HasMaxLength(4000).IsRequired();
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.ResolutionNote).HasMaxLength(1000);
+        builder.HasIndex(x => new { x.AppUserId, x.CreatedAt });
         builder.HasIndex(x => new { x.Email, x.CreatedAt });
         builder.HasIndex(x => new { x.Status, x.CreatedAt });
         builder.HasOne(x => x.AppUser)
             .WithMany()
             .HasForeignKey(x => x.AppUserId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(x => x.StatusHistory)
             .WithOne(x => x.ContactRequest)
             .HasForeignKey(x => x.ContactRequestId)
@@ -41,6 +42,5 @@ public sealed class ContactRequestStatusHistoryConfiguration : IEntityTypeConfig
         builder.Property(x => x.FromStatus).IsRequired();
         builder.Property(x => x.ToStatus).IsRequired();
         builder.HasIndex(x => new { x.ContactRequestId, x.CreatedAt });
-        builder.HasIndex(x => x.ChangedBy);
     }
 }
