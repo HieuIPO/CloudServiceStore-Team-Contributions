@@ -16,45 +16,42 @@ public sealed class ContactRequestRepository(CloudServiceStoreDbContext dbContex
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
-            source = source.Where(x => x.FullName.Contains(search) || x.Email.Contains(search) || x.Subject.Contains(search));
+            source = source.Where(x => x.FullName.Contains(search) || x.Email.Contains(search) || x.PhoneNumber.Contains(search) || x.Subject.Contains(search) || x.Message.Contains(search));
         }
-        if (query.Status is not null) source = source.Where(x => x.Status == query.Status.Value);
-        if (query.CreatedFrom is not null) source = source.Where(x => x.CreatedAt >= query.CreatedFrom.Value);
-        if (query.CreatedTo is not null) source = source.Where(x => x.CreatedAt <= query.CreatedTo.Value);
-
-        var descending = !string.Equals(query.SortDirection, "asc", StringComparison.OrdinalIgnoreCase);
-        source = query.SortBy?.ToLowerInvariant() switch
-        {
-            "fullname" => descending ? source.OrderByDescending(x => x.FullName) : source.OrderBy(x => x.FullName),
-            "subject" => descending ? source.OrderByDescending(x => x.Subject) : source.OrderBy(x => x.Subject),
-            "status" => descending ? source.OrderByDescending(x => x.Status).ThenByDescending(x => x.CreatedAt) : source.OrderBy(x => x.Status).ThenBy(x => x.CreatedAt),
-            _ => descending ? source.OrderByDescending(x => x.CreatedAt) : source.OrderBy(x => x.CreatedAt)
-        };
+        if (query.Status is not null) source = source.Where(x => x.Status == query.Status);
+        if (query.CreatedFrom is not null) source = source.Where(x => x.CreatedAt >= query.CreatedFrom);
+        if (query.CreatedTo is not null) source = source.Where(x => x.CreatedAt <= query.CreatedTo);
 
         var total = await source.CountAsync(cancellationToken);
-        var items = await source.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize)
-            .ToListAsync(cancellationToken);
+        var descending = ListSortQuery.IsDescending(query.SortDirection);
+        var sortBy = query.SortBy?.Trim().ToLowerInvariant();
+        var ordered = sortBy switch
+        {
+            "fullname" => descending ? source.OrderByDescending(x => x.FullName).ThenBy(x => x.Id) : source.OrderBy(x => x.FullName).ThenBy(x => x.Id),
+            "subject" => descending ? source.OrderByDescending(x => x.Subject).ThenBy(x => x.Id) : source.OrderBy(x => x.Subject).ThenBy(x => x.Id),
+            "status" => descending ? source.OrderByDescending(x => x.Status).ThenByDescending(x => x.CreatedAt).ThenBy(x => x.Id) : source.OrderBy(x => x.Status).ThenByDescending(x => x.CreatedAt).ThenBy(x => x.Id),
+            "createdat" => descending ? source.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id) : source.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id),
+            _ => source.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id)
+        };
+        var items = await ordered.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync(cancellationToken);
         return (items, total);
     }
 
     public Task<ContactRequest?> FindAsync(Guid id, CancellationToken cancellationToken) =>
-        dbContext.ContactRequests
-            .Include(x => x.StatusHistory.OrderBy(h => h.CreatedAt))
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        dbContext.ContactRequests.Include(x => x.StatusHistory).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    public void Add(ContactRequest item) => dbContext.ContactRequests.Add(item);
+    public void Add(ContactRequest request) => dbContext.ContactRequests.Add(request);
     public void AddStatusHistory(ContactRequestStatusHistory history) => dbContext.ContactRequestStatusHistories.Add(history);
 
-    public void AddAudit(Guid? actorId, string action, string entityName, Guid entityId, string? oldValues, string? newValues, string? ipAddress) =>
+    public void AddAudit(Guid? actorId, string action, string entityName, Guid entityId, string? oldValuesJson, string? newValuesJson, string? ipAddress) =>
         dbContext.AuditLogs.Add(new AuditLog
         {
-            ActorId = actorId,
+            AppUserId = actorId,
             Action = action,
             EntityName = entityName,
             EntityId = entityId,
-            OldValuesJson = oldValues,
-            NewValuesJson = newValues,
+            OldValuesJson = oldValuesJson,
+            NewValuesJson = newValuesJson,
             IpAddress = ipAddress,
             OccurredAt = DateTimeOffset.UtcNow,
             CreatedBy = actorId

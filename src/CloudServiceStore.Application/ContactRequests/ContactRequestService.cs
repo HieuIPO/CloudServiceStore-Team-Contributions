@@ -7,9 +7,7 @@ using CloudServiceStore.Domain.Enums;
 
 namespace CloudServiceStore.Application.ContactRequests;
 
-public sealed partial class ContactRequestService(
-    IContactRequestRepository repository,
-    TimeProvider? timeProvider = null) : IContactRequestService
+public sealed partial class ContactRequestService(IContactRequestRepository repository, TimeProvider? timeProvider = null) : IContactRequestService
 {
     private readonly TimeProvider clock = timeProvider ?? TimeProvider.System;
 
@@ -45,8 +43,7 @@ public sealed partial class ContactRequestService(
             CreatedAt = now
         });
         repository.Add(item);
-        repository.AddAudit(ownerId, "ContactRequest.Created", nameof(ContactRequest), item.Id, null,
-            JsonSerializer.Serialize(new { item.Status, item.Email }), ipAddress);
+        repository.AddAudit(ownerId, "ContactRequest.Created", nameof(ContactRequest), item.Id, null, JsonSerializer.Serialize(new { item.Status, item.Email }), ipAddress);
         await repository.SaveChangesAsync(ct);
         return new(item.Id, item.Status, item.CreatedAt);
     }
@@ -58,8 +55,11 @@ public sealed partial class ContactRequestService(
         return new(result.Items.Select(MapList).ToArray(), query.Page, query.PageSize, result.Total);
     }
 
-    public async Task<ContactRequestDetailDto?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        id == Guid.Empty ? null : (await repository.FindAsync(id, ct)) is { } item ? MapDetail(item) : null;
+    public async Task<ContactRequestDetailDto?> GetByIdAsync(Guid id, CancellationToken ct)
+    {
+        if (id == Guid.Empty) return null;
+        return (await repository.FindAsync(id, ct)) is { } item ? MapDetail(item) : null;
+    }
 
     public async Task<ContactRequestDetailDto> UpdateStatusAsync(Guid id, UpdateContactRequestStatusRequest request, Guid actorId, string? ipAddress, CancellationToken ct)
     {
@@ -85,7 +85,8 @@ public sealed partial class ContactRequestService(
         item.ResolvedAt = request.Status is ContactRequestStatus.Resolved or ContactRequestStatus.Rejected ? now : null;
         item.UpdatedBy = actorId;
         item.UpdatedAt = now;
-        var history = new ContactRequestStatusHistory
+
+        repository.AddStatusHistory(new ContactRequestStatusHistory
         {
             ContactRequestId = item.Id,
             FromStatus = previous,
@@ -94,12 +95,9 @@ public sealed partial class ContactRequestService(
             ChangedBy = actorId,
             CreatedBy = actorId,
             CreatedAt = now
-        };
-        item.StatusHistory.Add(history);
-        repository.AddStatusHistory(history);
+        });
         repository.AddAudit(actorId, "ContactRequest.StatusChanged", nameof(ContactRequest), item.Id,
-            JsonSerializer.Serialize(new { Status = previous }),
-            JsonSerializer.Serialize(new { Status = item.Status, Note = note }), ipAddress);
+            JsonSerializer.Serialize(new { Status = previous }), JsonSerializer.Serialize(new { Status = item.Status, Note = note }), ipAddress);
         await repository.SaveChangesAsync(ct);
         return MapDetail(item);
     }
@@ -154,12 +152,10 @@ public sealed partial class ContactRequestService(
     [GeneratedRegex(@"^\+?(?:[\d][\s().-]*){8,15}$")]
     private static partial Regex PhonePattern();
 
-    private static ContactRequestListItemDto MapList(ContactRequest x) =>
-        new(x.Id, x.FullName, x.Email, x.PhoneNumber, x.CompanyName, x.Subject, x.Status, x.CreatedAt);
+    private static ContactRequestListItemDto MapList(ContactRequest x) => new(x.Id, x.FullName, x.Email, x.PhoneNumber, x.CompanyName, x.Subject, x.Status, x.CreatedAt);
 
     private static ContactRequestDetailDto MapDetail(ContactRequest x) => new(
         x.Id, x.FullName, x.Email, x.PhoneNumber, x.CompanyName, x.Subject, x.Message, x.Status,
-        x.ResolutionNote, x.ResolvedBy, x.CreatedAt, x.UpdatedAt,
-        x.StatusHistory.OrderBy(item => item.CreatedAt).Select(item => new ContactRequestStatusHistoryDto(
-            item.Id, item.FromStatus, item.ToStatus, item.Note, item.ChangedBy, item.CreatedAt)).ToArray());
+        x.ResolutionNote, x.ResolvedBy, x.ResolvedAt, x.CreatedAt, x.UpdatedAt,
+        x.StatusHistory.OrderBy(item => item.CreatedAt).Select(item => new ContactRequestStatusHistoryDto(item.Id, item.FromStatus, item.ToStatus, item.Note, item.ChangedBy, item.CreatedAt)).ToArray());
 }
