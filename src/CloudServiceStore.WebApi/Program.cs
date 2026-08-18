@@ -11,7 +11,6 @@ var visualQaData = builder.Configuration.GetValue<bool>("Seed:VisualQaData");
 VisualQaSeedGuard.Validate(visualQaData, builder.Environment.EnvironmentName);
 var connectionString = builder.Configuration.GetConnectionString("CloudServiceStore")
     ?? throw new InvalidOperationException("ConnectionStrings:CloudServiceStore is required.");
-
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration is required.");
 if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey) || jwtOptions.SigningKey.Length < 32)
@@ -22,23 +21,16 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 builder.Services.AddInfrastructure(builder.Configuration);
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:3000"];
-builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => policy
-    .WithOrigins(allowedOrigins)
-    .AllowAnyHeader()
-    .AllowAnyMethod()
-    .AllowCredentials()));
+builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 builder.Services.AddApiRateLimiting(builder.Configuration);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true,
-        ValidIssuer = jwtOptions.Issuer,
-        ValidateAudience = true,
-        ValidAudience = jwtOptions.Audience,
+        ValidateIssuer = true, ValidIssuer = jwtOptions.Issuer,
+        ValidateAudience = true, ValidAudience = jwtOptions.Audience,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.FromSeconds(30)
+        ValidateLifetime = true, ClockSkew = TimeSpan.FromSeconds(30)
     });
 builder.Services.AddAuthorization(options =>
 {
@@ -51,6 +43,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ManageLandingContent", policy => policy.RequireRole("Admin"));
     options.AddPolicy("ManageNews", policy => policy.RequireRole("Admin", "Editor"));
     options.AddPolicy("ManageOrders", policy => policy.RequireRole("Admin", "Editor"));
+    options.AddPolicy("ManageContactRequests", policy => policy.RequireRole("Admin", "Editor"));
     options.AddPolicy("ManageAffiliates", policy => policy.RequireRole("Admin", "Editor"));
     options.AddPolicy("ManageAffiliateProgram", policy => policy.RequireRole("Admin"));
     options.AddPolicy("ViewDashboard", policy => policy.RequireRole("Admin"));
@@ -59,9 +52,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
-
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
-
 var databaseStartupLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseStartup");
 await DatabaseStartup.ExecuteWithRetryAsync(
     async () =>
@@ -70,15 +61,9 @@ await DatabaseStartup.ExecuteWithRetryAsync(
         var dbContext = scope.ServiceProvider.GetRequiredService<CloudServiceStoreDbContext>();
         await dbContext.SeedAsync(builder.Configuration["Seed:AdminPassword"], visualQaData);
     },
-    onRetry: (exception, attempt, delay) => databaseStartupLogger.LogWarning(
-        exception,
-        "Database initialization attempt {Attempt} failed. Retrying in {DelaySeconds} seconds.",
-        attempt,
-        delay.TotalSeconds),
+    onRetry: (exception, attempt, delay) => databaseStartupLogger.LogWarning(exception,
+        "Database initialization attempt {Attempt} failed. Retrying in {DelaySeconds} seconds.", attempt, delay.TotalSeconds),
     cancellationToken: app.Lifetime.ApplicationStopping);
-
-// CORS must run before HTTPS redirection so browser preflight requests receive
-// the allow headers instead of being redirected without them.
 app.UseCors("Frontend");
 if (!app.Environment.IsEnvironment("Testing")) app.UseHttpsRedirection();
 app.UseRateLimiter();

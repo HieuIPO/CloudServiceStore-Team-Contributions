@@ -26,16 +26,16 @@ public sealed class CloudServiceStoreDbContext(DbContextOptions<CloudServiceStor
     public DbSet<OrderRequest> OrderRequests => Set<OrderRequest>();
     public DbSet<OrderRequestStatusHistory> OrderRequestStatusHistories => Set<OrderRequestStatusHistory>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ContactRequest> ContactRequests => Set<ContactRequest>();
+    public DbSet<ContactRequestStatusHistory> ContactRequestStatusHistories => Set<ContactRequestStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CloudServiceStoreDbContext).Assembly);
-
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().Where(type => typeof(SoftDeletableEntity).IsAssignableFrom(type.ClrType)))
         {
             modelBuilder.Entity(entityType.ClrType).HasQueryFilter(BuildNotDeletedFilter(entityType.ClrType));
         }
-
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
