@@ -8,6 +8,7 @@ using CloudServiceStore.Application.Orders;
 using CloudServiceStore.Application.Affiliates;
 using CloudServiceStore.Application.Reporting;
 using CloudServiceStore.Application.EditorWorkspace;
+using CloudServiceStore.Application.ContactRequests;
 using CloudServiceStore.Infrastructure.Authentication;
 using CloudServiceStore.Infrastructure.NewsData;
 using CloudServiceStore.Infrastructure.Persistence;
@@ -53,6 +54,8 @@ public static class DependencyInjection
         services.AddScoped<ILandingContentService, LandingContentService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IContactRequestRepository, ContactRequestRepository>();
+        services.AddScoped<IContactRequestService, ContactRequestService>();
         services.AddScoped<IAffiliateRepository, AffiliateRepository>();
         services.AddScoped<IAffiliateService, AffiliateService>();
         services.AddScoped<IReportingRepository, ReportingRepository>();
