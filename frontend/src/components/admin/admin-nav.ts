@@ -139,10 +139,23 @@ export const getNavGroupsForUser = (userRoles: string[]): AdminNavGroup[] => {
 export const isRouteAllowed = (pathname: string, userRoles: string[]): boolean => {
   const route = new URL(pathname, "http://admin.local");
   const normalizedPath = route.pathname;
-  if (normalizedPath === "/admin/affiliates" && route.searchParams.get("tab") === "program") return userRoles.includes("Admin");
-  if (normalizedPath === "/admin/profile") return userRoles.some(role => role === "Admin" || role === "Editor");
+
+  // The program tab shares the affiliate page shell but is Admin-only.
+  if (normalizedPath === "/admin/affiliates" && route.searchParams.get("tab") === "program") {
+    return userRoles.includes("Admin");
+  }
+
+  // The personal profile is opened from the account menu instead of the sidebar.
+  if (normalizedPath === "/admin/profile") {
+    return userRoles.some(role => role === "Admin" || role === "Editor");
+  }
+
+  // Sort items by longest href first for most specific route matching
   const sortedItems = [...allNavItems].sort((a, b) => b.href.length - a.href.length);
   const matchedItem = sortedItems.find(item => normalizedPath === item.href || normalizedPath.startsWith(item.href + "/"));
+
+  // /admin is the redirect entry point; every other unknown admin route is denied
+  // by default so an Editor cannot reach a future or mistyped Admin page.
   if (!matchedItem) return normalizedPath === "/admin" || normalizedPath === "/admin/";
   return matchedItem.roles.some(r => userRoles.includes(r));
 };
