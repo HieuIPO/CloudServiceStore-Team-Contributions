@@ -1,6 +1,6 @@
 using CloudServiceStore.Domain.Common;
 
-namespace CloudServiceStore.Domain.Entities.Catalog;
+namespace CloudServiceStore.Domain.Entities;
 
 public sealed class ServicePlanFeature : AuditableEntity
 {

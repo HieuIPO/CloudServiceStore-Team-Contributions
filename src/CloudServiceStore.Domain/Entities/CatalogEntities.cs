@@ -1,5 +1,4 @@
 using CloudServiceStore.Domain.Common;
-using CloudServiceStore.Domain.Entities.Catalog;
 using CloudServiceStore.Domain.Enums;
 
 namespace CloudServiceStore.Domain.Entities;

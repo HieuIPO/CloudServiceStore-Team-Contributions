@@ -1,7 +1,7 @@
 using CloudServiceStore.Application.Common;
 using CloudServiceStore.Application.Promotions;
 using CloudServiceStore.Domain.Entities;
-using CloudServiceStore.Domain.Entities.Catalog;
+
 
 namespace CloudServiceStore.Application.Catalog;
 
