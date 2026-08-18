@@ -1,6 +1,8 @@
+using CloudServiceStore.Application.Common;
 using CloudServiceStore.Application.Orders;
 using CloudServiceStore.Application.Promotions;
 using CloudServiceStore.Domain.Entities;
+
 using CloudServiceStore.Domain.Enums;
 using Moq;
 

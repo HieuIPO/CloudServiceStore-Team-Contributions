@@ -1,4 +1,5 @@
 using CloudServiceStore.Domain.Entities;
+
 using CloudServiceStore.Domain.Enums;
 
 namespace CloudServiceStore.Domain.Tests;

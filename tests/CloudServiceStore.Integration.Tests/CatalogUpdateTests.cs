@@ -1,5 +1,6 @@
 using CloudServiceStore.Application.Catalog;
 using CloudServiceStore.Domain.Entities;
+
 using CloudServiceStore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 

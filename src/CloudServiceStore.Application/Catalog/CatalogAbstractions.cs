@@ -1,3 +1,4 @@
+
 using CloudServiceStore.Domain.Entities;
 
 namespace CloudServiceStore.Application.Catalog;

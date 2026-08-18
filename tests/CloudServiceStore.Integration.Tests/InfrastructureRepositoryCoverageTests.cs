@@ -3,6 +3,7 @@ using CloudServiceStore.Application.Orders;
 using CloudServiceStore.Application.Promotions;
 using CloudServiceStore.Application.Reporting;
 using CloudServiceStore.Domain.Entities;
+
 using CloudServiceStore.Domain.Enums;
 using CloudServiceStore.Infrastructure.Authentication;
 using CloudServiceStore.Infrastructure.Persistence;

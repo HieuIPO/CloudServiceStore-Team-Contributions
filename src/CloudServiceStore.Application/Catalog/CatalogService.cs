@@ -2,6 +2,7 @@ using CloudServiceStore.Application.Common;
 using CloudServiceStore.Application.Promotions;
 using CloudServiceStore.Domain.Entities;
 
+
 namespace CloudServiceStore.Application.Catalog;
 
 public sealed class CatalogService(

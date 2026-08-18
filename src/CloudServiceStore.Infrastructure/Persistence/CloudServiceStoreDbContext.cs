@@ -1,5 +1,6 @@
 using CloudServiceStore.Domain.Common;
 using CloudServiceStore.Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace CloudServiceStore.Infrastructure.Persistence;
@@ -51,6 +52,14 @@ public sealed class CloudServiceStoreDbContext(DbContextOptions<CloudServiceStor
         {
             if (entry.State == EntityState.Added) entry.Entity.CreatedAt = now;
             if (entry.State == EntityState.Modified) entry.Entity.UpdatedAt = now;
+            
+            if (entry.State == EntityState.Deleted && entry.Entity is SoftDeletableEntity softDeletable)
+            {
+                entry.State = EntityState.Modified;
+                softDeletable.IsDeleted = true;
+                softDeletable.DeletedAt = now;
+                // DeletedBy would be set from current user context if available, but omitting here as it's not injected.
+            }
         }
     }
 
