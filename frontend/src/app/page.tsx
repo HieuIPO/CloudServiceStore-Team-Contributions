@@ -10,9 +10,7 @@ export const metadata: Metadata = {
   description: "VPS, Hosting, bảo mật và hạ tầng Cloud minh bạch cho doanh nghiệp.",
 };
 
-export default async function Home({ searchParams }: PageProps<"/">) {
-  const params = await searchParams;
-  const useSamplePreview = params.preview === "sample";
-  const data = await getLandingHomeData(useSamplePreview);
+export default async function Home() {
+  const data = await getLandingHomeData();
   return <><SiteHeader overlay /><PublicLanding data={data} /><SiteFooter /></>;
 }

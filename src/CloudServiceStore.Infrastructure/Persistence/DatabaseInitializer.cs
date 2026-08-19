@@ -9,15 +9,8 @@ public static class DatabaseInitializer
     public static async Task SeedAsync(
         this CloudServiceStoreDbContext dbContext,
         string? adminPassword,
-        bool visualQaData = false,
         CancellationToken cancellationToken = default)
     {
-        if (visualQaData)
-        {
-            await VisualQaDataSeeder.SeedAsync(dbContext, adminPassword, cancellationToken);
-            return;
-        }
-
         await SeedDefaultAsync(dbContext, adminPassword, cancellationToken);
     }
 

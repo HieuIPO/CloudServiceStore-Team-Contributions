@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, catalogApi, promotionApi, type Promotion, type ServicePlanDetail } from "@/lib/api";
-import { buildPricingPlans, formatPromotionDate, getActivePromotion, getCountdownParts, samplePricingPlans, samplePricingPromotion, type BillingCycle, type CountdownParts, type PricingPlan } from "@/lib/pricing-data";
+import { buildPricingPlans, formatPromotionDate, getActivePromotion, getCountdownParts, type BillingCycle, type CountdownParts, type PricingPlan } from "@/lib/pricing-data";
 import { CalendarIcon, DocumentIcon, TrendIcon } from "@/components/pricing-art";
 import { PricingComparisonTable } from "@/components/pricing-comparison-table";
 import { PricingPlanCard } from "@/components/pricing-plan-card";
@@ -17,21 +17,14 @@ export function PublicPricingPage() {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>(12);
   const [promotion, setPromotion] = useState<Promotion | null>(null);
   const [countdown, setCountdown] = useState<CountdownParts | null>(null);
-  const [samplePreview, setSamplePreview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (useSamplePreview: boolean) => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     setPromotion(null);
     setCountdown(null);
-    if (useSamplePreview) {
-      setPlans(samplePricingPlans);
-      setPromotion(samplePricingPromotion);
-      setLoading(false);
-      return;
-    }
 
     try {
       const [result, promotionResult] = await Promise.all([
@@ -58,10 +51,8 @@ export function PublicPricingPage() {
   }, []);
 
   useEffect(() => {
-    const useSamplePreview = new URLSearchParams(window.location.search).get("preview") === "sample";
     const timer = window.setTimeout(() => {
-      setSamplePreview(useSamplePreview);
-      void load(useSamplePreview);
+      void load();
     }, 0);
     return () => window.clearTimeout(timer);
   }, [load]);
@@ -98,13 +89,12 @@ export function PublicPricingPage() {
           </div>
         </ScrollReveal>
 
-        {samplePreview && <p className="sr-only" role="status">Đang xem dữ liệu mẫu — không ghi vào API.</p>}
         {promotion && countdown && !countdown.expired && <ScrollReveal className="pricing-promotion-reveal mt-5" delay={130}>
           <PricingPromotionBanner billingCycle={billingCycle} countdown={countdown} promotion={promotion} />
         </ScrollReveal>}
 
         {loading && <PricingLoadingState />}
-        {error && <PricingErrorState message={error} onRetry={() => void load(samplePreview)} />}
+        {error && <PricingErrorState message={error} onRetry={() => void load()} />}
         {!loading && !error && !plans.length && <PricingEmptyState />}
         {!loading && !error && plans.length > 0 && (
           <ScrollReveal className="pricing-comparison-reveal mt-5" delay={90}>

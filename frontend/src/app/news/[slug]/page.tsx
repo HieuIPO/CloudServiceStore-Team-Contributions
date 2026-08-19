@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = { title: "Tin tức & kiến thức Cloud" };
 
-export default async function NewsDetailPage({ params, searchParams }: PageProps<"/news/[slug]">) {
-  const [{ slug }, query] = await Promise.all([params, searchParams]);
-  return <><SiteHeader activeHref="/news" /><NewsDetailClient samplePreview={query.preview === "sample"} slug={slug} /><SiteFooter /></>;
+export default async function NewsDetailPage({ params }: PageProps<"/news/[slug]">) {
+  const { slug } = await params;
+  return <><SiteHeader activeHref="/news" /><NewsDetailClient slug={slug} /><SiteFooter /></>;
 }

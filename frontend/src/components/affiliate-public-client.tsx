@@ -74,18 +74,15 @@ const faqs = [
   ["Làm thế nào để theo dõi khách hàng giới thiệu?", "Đội ngũ CloudServiceStore sẽ cung cấp liên kết và hướng dẫn theo dõi sau khi hồ sơ được duyệt."],
 ];
 
-export function AffiliatePublicClient({ program, samplePreview = false }: { program: AffiliateProgramContent | null; samplePreview?: boolean }) {
+export function AffiliatePublicClient({ program }: { program: AffiliateProgramContent | null }) {
   const [form, setForm] = useState<AffiliateForm>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<AffiliateConfirmation | null>(null);
   const [customerAccount, setCustomerAccount] = useState<AuthenticatedUser | null>(null);
-  const [accountChecked, setAccountChecked] = useState(samplePreview);
+  const [accountChecked, setAccountChecked] = useState(false);
 
   useEffect(() => {
-    if (samplePreview) {
-      return;
-    }
     let subscribed = true;
     const applyAccount = (user: AuthenticatedUser | null) => {
       if (!subscribed) return;
@@ -103,7 +100,7 @@ export function AffiliatePublicClient({ program, samplePreview = false }: { prog
       if (subscribed) setAccountChecked(true);
     });
     return () => { subscribed = false; };
-  }, [samplePreview]);
+  }, []);
 
   const title = program?.title?.trim() || "Trở thành đối tác CloudServiceStore";
   const summary = program?.summary?.trim() || "Cùng phát triển hệ sinh thái Cloud và nhận hoa hồng hấp dẫn từ mỗi khách hàng giới thiệu.";
@@ -114,7 +111,7 @@ export function AffiliatePublicClient({ program, samplePreview = false }: { prog
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!samplePreview && !customerAccount) {
+    if (!customerAccount) {
       setError("Vui lòng đăng nhập tài khoản khách hàng trước khi gửi hồ sơ Affiliate.");
       return;
     }
@@ -135,13 +132,6 @@ export function AffiliatePublicClient({ program, samplePreview = false }: { prog
       `Số lượng khách hàng dự kiến: ${form.estimatedReferrals}`,
       `Kế hoạch hợp tác: ${form.audienceDescription}`,
     ].join("\n");
-
-    if (samplePreview) {
-      setConfirmation({ id: "PREVIEW-AFFILIATE-001", status: 1, createdAt: new Date().toISOString() });
-      setForm(emptyForm);
-      setSubmitting(false);
-      return;
-    }
 
     void affiliateApi.create({
       fullName: form.fullName,
@@ -218,9 +208,9 @@ export function AffiliatePublicClient({ program, samplePreview = false }: { prog
         <SectionTitle id="affiliate-form-title" title="Đăng ký làm đối tác" />
         <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.65fr)_minmax(16rem,.95fr)] lg:mt-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(19rem,.9fr)] lg:gap-4">
           <section className="affiliate-form-card affiliate-form-panel rounded-xl border border-blue-100 bg-white p-3 sm:p-6 lg:p-5">
-            {confirmation ? <ConfirmationState confirmation={confirmation} customerAccount={customerAccount} samplePreview={samplePreview} onReset={() => setConfirmation(null)} /> : <>
+            {confirmation ? <ConfirmationState confirmation={confirmation} customerAccount={customerAccount} onReset={() => setConfirmation(null)} /> : <>
               <div><p className="text-sm font-black text-[#10245a]">Thông tin đăng ký đối tác</p><p className="mt-1 text-xs text-slate-500">Để lại thông tin, đội ngũ CloudServiceStore sẽ liên hệ xác minh trong thời gian sớm nhất.</p></div>
-              {!samplePreview && accountChecked && !customerAccount && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">Để gửi và theo dõi hồ sơ Affiliate, vui lòng <Link className="font-black text-blue-700 underline" href="/account/login?returnTo=%2Faffiliate">đăng nhập tài khoản khách hàng</Link> trước.</p>}
+              {accountChecked && !customerAccount && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">Để gửi và theo dõi hồ sơ Affiliate, vui lòng <Link className="font-black text-blue-700 underline" href="/account/login?returnTo=%2Faffiliate">đăng nhập tài khoản khách hàng</Link> trước.</p>}
               {error && <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">{error}</p>}
               <form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={submit}>
                 <AffiliateField label="Họ và tên" required><input className="affiliate-field" maxLength={160} readOnly={Boolean(customerAccount)} required value={form.fullName} onChange={event => updateField("fullName", event.target.value)} /></AffiliateField>
@@ -234,7 +224,7 @@ export function AffiliatePublicClient({ program, samplePreview = false }: { prog
                 <AffiliateField className="sm:col-span-2" label="Kênh quảng bá hoặc kênh tiếp cận khách hàng" required><textarea className="affiliate-field min-h-20 resize-y" maxLength={500} placeholder="Website, mạng xã hội, cộng đồng, sự kiện..." required value={form.channelDescription} onChange={event => updateField("channelDescription", event.target.value)} /></AffiliateField>
                 <AffiliateField className="sm:col-span-2" label="Giới thiệu về kênh hoặc kế hoạch hợp tác" required><textarea className="affiliate-field min-h-24 resize-y" maxLength={1500} required value={form.audienceDescription} onChange={event => updateField("audienceDescription", event.target.value)} /></AffiliateField>
                 <label className="flex items-start gap-2 text-xs leading-5 text-slate-600 sm:col-span-2"><input checked={form.consent} className="mt-1 h-4 w-4 accent-blue-600" onChange={event => updateField("consent", event.target.checked)} type="checkbox" /> <span>Tôi đồng ý với <a className="font-bold text-blue-700 underline" href="#affiliate-rules-title">chính sách chương trình Affiliate</a></span></label>
-                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 sm:col-span-2" disabled={submitting || !accountChecked || (!samplePreview && !customerAccount)} type="submit">{submitting ? "Đang gửi..." : "Gửi đăng ký đối tác"}<ArrowRightIcon /></button>
+                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 sm:col-span-2" disabled={submitting || !accountChecked || !customerAccount} type="submit">{submitting ? "Đang gửi..." : "Gửi đăng ký đối tác"}<ArrowRightIcon /></button>
               </form>
             </>}
           </section>
@@ -269,8 +259,8 @@ function SupportPoint({ description, icon, title }: { description: string; icon:
   return <div className="flex gap-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-blue-600"><AffiliateIcon kind={icon} /></span><div><b className="block text-[#10245a]">{title}</b><span className="mt-0.5 block leading-5 text-slate-600">{description}</span></div></div>;
 }
 
-function ConfirmationState({ confirmation, customerAccount, samplePreview, onReset }: { confirmation: AffiliateConfirmation; customerAccount: AuthenticatedUser | null; samplePreview: boolean; onReset: () => void }) {
-  return <div className="flex min-h-[32rem] flex-col items-center justify-center text-center"><span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-3xl text-emerald-700">✓</span><p className="mt-5 text-xs font-black uppercase tracking-widest text-emerald-700">Đã tiếp nhận hồ sơ</p><h3 className="mt-2 text-2xl font-black">Cảm ơn bạn đã đăng ký hợp tác</h3><p className="mt-3 max-w-md text-sm leading-6 text-slate-600">Đội ngũ vận hành sẽ xem xét và liên hệ xác minh. Mã hồ sơ của bạn:</p><code className="mt-4 rounded-lg bg-slate-950 px-4 py-3 text-sm font-bold text-white">{confirmation.id}</code>{customerAccount && !samplePreview && <Link className="mt-4 font-bold text-blue-700 underline" href={`/account/affiliates/${confirmation.id}`}>Xem hồ sơ trong tài khoản</Link>}<button className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-500 px-5 text-sm font-black text-blue-700 transition hover:bg-blue-50" onClick={onReset} type="button">Gửi hồ sơ khác</button></div>;
+function ConfirmationState({ confirmation, customerAccount, onReset }: { confirmation: AffiliateConfirmation; customerAccount: AuthenticatedUser | null; onReset: () => void }) {
+  return <div className="flex min-h-[32rem] flex-col items-center justify-center text-center"><span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-3xl text-emerald-700">✓</span><p className="mt-5 text-xs font-black uppercase tracking-widest text-emerald-700">Đã tiếp nhận hồ sơ</p><h3 className="mt-2 text-2xl font-black">Cảm ơn bạn đã đăng ký hợp tác</h3><p className="mt-3 max-w-md text-sm leading-6 text-slate-600">Đội ngũ vận hành sẽ xem xét và liên hệ xác minh. Mã hồ sơ của bạn:</p><code className="mt-4 rounded-lg bg-slate-950 px-4 py-3 text-sm font-bold text-white">{confirmation.id}</code>{customerAccount && <Link className="mt-4 font-bold text-blue-700 underline" href={`/account/affiliates/${confirmation.id}`}>Xem hồ sơ trong tài khoản</Link>}<button className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-500 px-5 py-3 text-sm font-black text-blue-700 transition hover:bg-blue-50" onClick={onReset} type="button">Gửi hồ sơ khác</button></div>;
 }
 
 function ArrowRightIcon() {

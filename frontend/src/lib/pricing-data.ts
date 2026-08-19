@@ -33,93 +33,6 @@ export const pricingSpecRows: Array<{ key: PricingSpecKey; label: string }> = [
   { key: "Hỗ trợ kỹ thuật", label: "Hỗ trợ kỹ thuật" },
 ];
 
-const sampleSpecs = (
-  cpu: string,
-  ram: string,
-  storage: string,
-  bandwidth: string,
-  backup = "Backup hàng ngày",
-  support = "24/7 – Cơ bản",
-): Record<PricingSpecKey, string> => ({
-  CPU: cpu,
-  RAM: ram,
-  "SSD/NVMe": storage,
-  "Băng thông": bandwidth,
-  "IP riêng": "1 IP",
-  Backup: backup,
-  "Hỗ trợ kỹ thuật": support,
-});
-
-export const samplePricingPlans: PricingPlan[] = [
-  {
-    id: "sample-plan-vps-start-2",
-    slug: "sample-vps-start-2",
-    categoryName: "VPS",
-    name: "VPS Start 2",
-    summary: "Phù hợp website nhỏ và landing page.",
-    currency: "VND",
-    isFeatured: false,
-    isCustom: false,
-    monthly: { current: 199000 },
-    annual: { current: 2390000, original: 2988000 },
-    promotionLabel: "-20%",
-    specs: sampleSpecs("2 vCPU", "4 GB", "80 GB NVMe", "2 TB/tháng"),
-  },
-  {
-    id: "sample-plan-vps-business-4",
-    slug: "sample-vps-business-4",
-    categoryName: "VPS",
-    name: "VPS Business 4",
-    summary: "Cấu hình ổn định cho doanh nghiệp vừa.",
-    currency: "VND",
-    isFeatured: true,
-    isCustom: false,
-    monthly: { current: 499000 },
-    annual: { current: 5990000, original: 7488000 },
-    promotionLabel: "-20%",
-    specs: sampleSpecs("4 vCPU", "8 GB", "160 GB NVMe", "4 TB/tháng", "Backup hàng ngày", "24/7 – Ưu tiên"),
-  },
-  {
-    id: "sample-plan-cloud-server-pro-8",
-    slug: "sample-cloud-server-pro-8",
-    categoryName: "Cloud Server",
-    name: "Cloud Server Pro 8",
-    summary: "Hiệu năng cao cho ứng dụng và hệ thống nội bộ.",
-    currency: "VND",
-    isFeatured: false,
-    isCustom: false,
-    monthly: { current: 899000 },
-    annual: { current: 10790000, original: 13488000 },
-    promotionLabel: "-20%",
-    specs: sampleSpecs("8 vCPU", "16 GB", "300 GB NVMe", "6 TB/tháng", "Backup hàng ngày", "24/7 – Ưu tiên cao"),
-  },
-  {
-    id: "sample-plan-cloud-server-enterprise",
-    categoryName: "Cloud Server",
-    name: "Cloud Server Enterprise",
-    summary: "Giải pháp tùy biến cho hệ thống lớn.",
-    currency: "VND",
-    isFeatured: false,
-    isCustom: true,
-    specs: sampleSpecs("Tùy chỉnh", "Tùy chỉnh", "Tùy chỉnh", "Tùy chỉnh", "Backup tùy chỉnh", "24/7 – Chuyên biệt"),
-  },
-];
-
-export const promotionEndsAt = "2026-08-31T23:59:59+07:00";
-
-export const samplePricingPromotion: Promotion = {
-  id: "sample-promotion-cloud20",
-  code: "SAMPLE20",
-  name: "Ưu đãi đặc biệt",
-  discountType: 1,
-  discountValue: 20,
-  startsAt: "2026-08-01T00:00:00+07:00",
-  endsAt: promotionEndsAt,
-  isActive: true,
-  showOnPublicBanner: true,
-  servicePlanIds: [],
-};
-
 export type CountdownParts = {
   days: number;
   hours: number;
@@ -128,7 +41,7 @@ export type CountdownParts = {
   expired: boolean;
 };
 
-export function getCountdownParts(now: number, end = Date.parse(promotionEndsAt)): CountdownParts {
+export function getCountdownParts(now: number, end: number): CountdownParts {
   const remaining = Math.max(0, end - now);
   const totalSeconds = Math.floor(remaining / 1000);
   return {
@@ -217,9 +130,9 @@ export function buildPricingPlans(plans: ServicePlan[], details: Record<string, 
   const infrastructurePlans = plans.filter(plan => /vps|hosting|cloud|server/i.test(`${plan.categoryName} ${plan.name}`));
   const candidates = [...preferred, ...infrastructurePlans, ...plans].filter((plan, index, list) => list.findIndex(item => item.id === plan.id) === index);
   const selected = candidates.slice(0, 4).map(plan => mapPlan(plan, details[plan.id]));
-  const enterprise = selected.find(plan => /enterprise/i.test(plan.name)) ?? samplePricingPlans[3];
+  const enterprise = selected.find(plan => /enterprise/i.test(plan.name));
   const priced = selected.filter(plan => !/enterprise/i.test(plan.name)).slice(0, 3);
-  return [...priced, enterprise];
+  return enterprise ? [...priced, enterprise] : priced;
 }
 
 function mapPlan(plan: ServicePlan, detail?: ServicePlanDetail): PricingPlan {

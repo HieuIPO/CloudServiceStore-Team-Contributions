@@ -15,7 +15,7 @@ test("public article titles wrap long unbroken content inside the article column
   assert.ok(detailSource.includes('key={`${tag}-${index}`}'), "Repeated article tags must have stable unique keys");
 });
 
-test("Visual-QA article thumbnails use real cloud imagery instead of a stretched window icon", () => {
+test("Article thumbnails use real cloud imagery instead of a stretched window icon", () => {
   assert.ok(thumbnailSource.includes('endsWith("/window.svg")'), "The seeded placeholder thumbnail must be recognized");
   assert.ok(thumbnailSource.includes("/hero/hero-cloud-01.webp"), "News cards need a local image fallback");
   assert.ok(detailSource.includes("resolveNewsThumbnail"), "Article detail images must use the same fallback");
