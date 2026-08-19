@@ -11,12 +11,20 @@ Website giới thiệu dịch vụ Cloud và tiếp nhận yêu cầu đặt VPS
 ## Chạy local
 
 1. Cài .NET SDK 10, Node.js 24+ và Docker Desktop.
-2. Sao chép `.env.example` thành `.env` và đổi hai mật khẩu demo.
+2. Sao chép `.env.example` thành `.env`, sau đó thay các giá trị phát triển trong file `.env`.
 3. Chạy `docker compose up --build`.
 4. Terminal khác: chạy `cd frontend; npm ci; npm run dev` để mở frontend tại `http://localhost:3000`.
 5. API health check: `http://localhost:8080/health`.
 
-Khi database trống, API chạy EF migrations và seed hai tài khoản demo: `admin@cloud.local`, `editor@cloud.local`. Cả hai dùng giá trị `SEED_ADMIN_PASSWORD` chỉ để phát triển; phải đổi trước khi deploy. Seed mặc định không đưa dữ liệu vận hành giả vào Catalog/News.
+Khi database trống, API chạy EF migrations và seed hai tài khoản demo. Seed mặc định không đưa dữ liệu vận hành giả vào Catalog/News.
+
+### Tài khoản demo
+
+- **Admin:** `admin@cloud.local`
+- **Editor:** `editor@cloud.local`
+- **Mật khẩu ban đầu:** giá trị `SEED_ADMIN_PASSWORD` trong file `.env` (mẫu trong `.env.example` là `LocalDev#Admin2026!`). Cả hai tài khoản staff dùng cùng mật khẩu seed này trong môi trường phát triển.
+- `MSSQL_SA_PASSWORD` chỉ là mật khẩu tài khoản `sa` của SQL Server, không phải mật khẩu đăng nhập website.
+- **Customer:** không seed sẵn; đăng ký tài khoản mới tại `/login` để thực hiện luồng đặt dịch vụ và affiliate.
 
 Dữ liệu Catalog, Pricing, Promotion, News, Order, Affiliate, Dashboard và Audit Log được đọc/ghi trên SQL Server thật của stack chính. Docker lưu database trong volume `sqlserver-data`; volume và dữ liệu runtime không được đưa lên Git, chỉ migration và mã nguồn được quản lý phiên bản.
 
