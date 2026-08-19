@@ -1,6 +1,5 @@
 import "server-only";
 import type { NewsArticle, PagedResult, Promotion, PublicLandingContent, ServicePlan, ServicePlanDetail, ServicePlanFeature } from "@/lib/api";
-import { sampleLandingHomeData, sampleLandingContent } from "@/lib/landing-sample";
 
 const serverApiBaseUrl = process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
@@ -23,9 +22,7 @@ export type LandingHomeData = {
 
 export type LandingFeaturedPlan = ServicePlan & { features: ServicePlanFeature[] };
 
-export async function getLandingHomeData(useSamplePreview = false): Promise<LandingHomeData> {
-  if (useSamplePreview) return sampleLandingHomeData;
-
+export async function getLandingHomeData(): Promise<LandingHomeData> {
   const results = await Promise.allSettled([
     getJson<PublicLandingContent>("/api/v1/landing-content"),
     getJson<PagedResult<ServicePlan>>("/api/v1/service-plans?page=1&pageSize=4&isActive=true&isFeatured=true"),
@@ -60,9 +57,7 @@ export async function getLandingHomeData(useSamplePreview = false): Promise<Land
   };
 }
 
-export async function getPublicLandingContent(useSamplePreview = false): Promise<PublicLandingContent | null> {
-  if (useSamplePreview) return sampleLandingContent;
-
+export async function getPublicLandingContent(): Promise<PublicLandingContent | null> {
   try { return await getJson<PublicLandingContent>("/api/v1/landing-content"); }
   catch { return null; }
 }

@@ -12,7 +12,6 @@ const detailSource = await readOptional("../src/components/service-plan-detail-c
 const catalogSource = await readOptional("../src/components/public-service-catalog.tsx");
 const cardSource = await readOptional("../src/components/service-plan-card.tsx");
 const artSource = await readOptional("../src/components/service-catalog-art.tsx");
-const sampleSource = await readOptional("../src/lib/service-catalog-sample.ts");
 const headerSource = await readOptional("../src/components/site-header.tsx");
 const visualSource = `${catalogSource}\n${cardSource}\n${artSource}`;
 
@@ -80,17 +79,6 @@ test("service hero and CTA keep the approved compact reference proportions", () 
     'data-hero-server="secondary"',
   ]) {
     assert.ok(visualSource.includes(contract), `Expected compact reference contract ${contract}`);
-  }
-});
-
-test("service catalog supports an explicit sample-data preview without seeding the API", () => {
-  assert.match(catalogSource, /URLSearchParams/);
-  assert.match(catalogSource, /"preview"/);
-  assert.match(catalogSource, /"sample"/);
-  assert.match(catalogSource, /samplePlans/);
-  assert.match(catalogSource, /Đang xem dữ liệu mẫu/);
-  for (const contract of ["VPS Business 4", "Hosting Pro", "Anti-DDoS Basic", "samplePlanDetails"]) {
-    assert.ok(sampleSource.includes(contract), `Expected sample catalog source to include ${contract}`);
   }
 });
 

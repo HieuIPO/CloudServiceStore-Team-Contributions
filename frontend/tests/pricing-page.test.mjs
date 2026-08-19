@@ -30,10 +30,6 @@ test("pricing mockup exposes the billing, promotion, plan and CTA contracts", ()
     "Bảng giá dịch vụ",
     "Theo tháng",
     "Theo năm",
-    "VPS Start 2",
-    "VPS Business 4",
-    "Cloud Server Pro 8",
-    "Cloud Server Enterprise",
     "Đặt hàng ngay",
     "Liên hệ tư vấn",
     "setBillingCycle",
@@ -78,14 +74,6 @@ test("pricing comparison keeps plan values readable while swiping on mobile", ()
   assert.match(comparisonSource, /grid-cols-\[minmax\(0,1fr\)_minmax\(5\.5rem,auto\)\]/);
 });
 
-test("pricing preview is local-only and includes the reference annual prices", () => {
-  assert.match(pricingSource, /URLSearchParams/);
-  assert.match(pricingSource, /preview/);
-  for (const contract of ["2390000", "5990000", "10790000", "samplePricingPlans"]) {
-    assert.ok(dataSource.includes(contract) || pricingSource.includes(contract), `Expected sample pricing contract ${contract}`);
-  }
-});
-
 test("pricing links preserve the selected billing cycle for each plan", () => {
   assert.match(cardSource, /billingCycle/);
   assert.match(cardSource, /\/order\?plan=/);
@@ -115,7 +103,7 @@ test("public pricing ignores price versions outside their effective window", () 
 
 test("order flow carries the selected cycle and uses the configured price version", () => {
   for (const contract of [
-    'const { plan, cycle, preview } = await searchParams;',
+    "const { plan, cycle } = await searchParams;",
     "initialBillingCycle",
     "getActivePlanPrice",
     "const selectedPrice = getActivePlanPrice",
@@ -133,7 +121,7 @@ test("order pricing treats a null promotion as no discount and hides the empty p
 });
 
 test("order form keeps service and plan selection explicit", () => {
-  assert.match(orderSource, /const initialPlan = samplePlans\.find\(item => item\.slug === initialPlanSlug\);/);
+  assert.match(orderSource, /const \[plans, setPlans\] = useState<ServicePlan\[\]>\(\[\]\);/);
   assert.match(orderSource, /const planOptions = category \? \(categoryPlans\.length \? categoryPlans : plans\) : \[\];/);
   assert.match(orderSource, /updateForm\("servicePlanId", ""\)/);
   assert.match(orderSource, /<option value="">/);

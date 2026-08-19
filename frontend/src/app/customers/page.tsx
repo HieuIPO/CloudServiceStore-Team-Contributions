@@ -17,9 +17,8 @@ export const metadata: Metadata = {
   description: "Đánh giá từ khách hàng, doanh nghiệp tiêu biểu và QR từng gói dịch vụ.",
 };
 
-export default async function CustomersPage({ searchParams }: PageProps<"/customers">) {
-  const params = await searchParams;
-  const landing = await getPublicLandingContent(params.preview === "sample");
+export default async function CustomersPage() {
+  const landing = await getPublicLandingContent();
   const testimonials = landing?.testimonials ?? [];
   const logos = landing?.customerLogos?.slice(0, 10) ?? [];
   const qrPlans = (await getPublicServicePlans()).map(toCustomerQrPlan);

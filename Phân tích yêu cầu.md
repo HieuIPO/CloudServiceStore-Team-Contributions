@@ -443,7 +443,7 @@ Mỗi Sprint kéo dài khoảng một tuần. Backend owner chịu trách nhiệ
 - [x] **Đã kiểm chứng:** public/admin responsive UI; JWT, refresh token, Admin/Editor/Customer, password hash.
 - [x] **Đã kiểm chứng:** CRUD catalog/plan/price/promotion/news/order; QR; audit.
 - [x] **Đã kiểm chứng:** OrderRequest cho liên hệ/đặt dịch vụ; News Category; testimonial/logo công khai; Affiliate policy và status history.
-- [x] **Đã kiểm chứng cục bộ:** 186 backend test, 143 frontend test, coverage source-only và responsive checks.
+- [x] **Đã kiểm chứng cục bộ:** 183 backend test, 141 frontend test, coverage source-only và responsive checks.
 - [x] **Đã kiểm chứng một phần:** Dockerfile, Compose, README và ERD; report/slide/demo cuối kỳ cần hoàn thiện riêng.
 - [x] **Đã kiểm chứng:** affiliate, dashboard cơ bản, Excel export, testimonial/logo khách hàng.
 - [x] **Đã kiểm chứng:** soft delete, policy authorization, integration test và healthcheck endpoint.
@@ -500,7 +500,7 @@ Mỗi thành viên phải sở hữu tối thiểu một module backend, một p
 
 # Checklist chốt trước khi nộp
 
-1. Chạy bộ seed Visual QA và xác nhận đủ sáu nhóm dịch vụ bắt buộc trên `/services` và `/pricing`.
+1. Chạy stack dữ liệu thật, kiểm tra migration và xác nhận dữ liệu được đọc từ SQL Server trên `/services` và `/pricing`.
 2. Chạy backend tests, frontend tests, lint, TypeScript và production build trong phiên sạch.
 3. Thu Cobertura coverage, loại file sinh trong `obj` và EF migrations khi tính số liệu source-only.
 4. Đưa ERD, kiến trúc, Repository/Strategy/Factory, security và số liệu test vào báo cáo cuối kỳ.

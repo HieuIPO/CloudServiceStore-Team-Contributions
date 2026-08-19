@@ -7,7 +7,6 @@ import { ServiceServerArt, ServiceSupportArt } from "@/components/service-catalo
 import { ServicePlanCard } from "@/components/service-plan-card";
 import { PublicPageBanner } from "@/components/public-page-banner";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { sampleCategories, samplePlanDetails, samplePlans } from "@/lib/service-catalog-sample";
 
 type SortOrder = "recommended" | "name" | "priceAsc" | "priceDesc";
 type CategoryOption = Pick<ServiceCategory, "id" | "name">;
@@ -35,19 +34,11 @@ export function PublicServiceCatalog() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [samplePreview, setSamplePreview] = useState(false);
 
-  const load = useCallback(async (useSamplePreview = false) => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    if (useSamplePreview) {
-      setPlans(samplePlans);
-      setDetails(samplePlanDetails);
-      setCategories(sampleCategories.map(category => ({ id: category.id, name: category.name })));
-      setLoading(false);
-      return;
-    }
     const [plansResult, categoriesResult] = await Promise.allSettled([
       catalogApi.publicPlans(),
       catalogApi.categories(),
@@ -80,10 +71,8 @@ export function PublicServiceCatalog() {
   }, []);
 
   useEffect(() => {
-    const useSamplePreview = new URLSearchParams(window.location.search).get("preview") === "sample";
     const timer = window.setTimeout(() => {
-      setSamplePreview(useSamplePreview);
-      void load(useSamplePreview);
+      void load();
     }, 0);
     return () => window.clearTimeout(timer);
   }, [load]);
@@ -167,9 +156,8 @@ export function PublicServiceCatalog() {
           <div><h2 className="text-2xl font-black tracking-[-.02em] text-[#10245a] sm:text-3xl" id="service-results-title">Gói dịch vụ Cloud</h2><p className="mt-1 text-sm text-slate-500">Chọn gói phù hợp với quy mô hệ thống của bạn.</p></div>
           {!loading && !error && <p className="shrink-0 text-sm font-semibold text-slate-500">{shownPlans.length} kết quả</p>}
         </div>
-        {samplePreview && <p className="mt-3 text-xs font-semibold text-blue-700" role="status">Đang xem dữ liệu mẫu — không ghi vào API.</p>}
         {loading && <LoadingGrid />}
-        {error && <ErrorState message={error} onRetry={() => void load(samplePreview)} />}
+        {error && <ErrorState message={error} onRetry={() => void load()} />}
         {!loading && !error && !plans.length && <EmptyState />}
         {!loading && !error && plans.length > 0 && !shownPlans.length && <NoMatchState onReset={resetFilters} />}
         {!loading && !error && shownPlans.length > 0 && <>

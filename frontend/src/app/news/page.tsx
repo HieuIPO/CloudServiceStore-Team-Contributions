@@ -5,7 +5,6 @@ import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = { title: "Tin tức & kiến thức Cloud", description: "Kiến thức Cloud, VPS, Hosting và thông báo mới nhất." };
 
-export default async function NewsPage({ searchParams }: PageProps<"/news">) {
-  const params = await searchParams;
-  return <><SiteHeader activeHref="/news" /><NewsPublic samplePreview={params.preview === "sample"} /><SiteFooter /></>;
+export default function NewsPage() {
+  return <><SiteHeader activeHref="/news" /><NewsPublic /><SiteFooter /></>;
 }

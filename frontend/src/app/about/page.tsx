@@ -42,9 +42,8 @@ const commitments: { title: string; text: string; icon: AboutIconKind }[] = [
   { title: "Giám sát hạ tầng liên tục", text: "Giám sát hệ thống 24/7 với công cụ hiện đại, cảnh báo sớm và xử lý sự cố nhanh chóng nhằm duy trì chất lượng dịch vụ.", icon: "monitor" },
 ];
 
-export default async function AboutPage({ searchParams }: PageProps<"/about">) {
-  const params = await searchParams;
-  const landing = await getPublicLandingContent(params.preview === "sample");
+export default async function AboutPage() {
+  const landing = await getPublicLandingContent();
   const content = landing?.content;
   const uptime = (content?.uptimeCommitment || "99.9%").replace("99,9", "99.9").replace(/\s*SLA/i, "");
 

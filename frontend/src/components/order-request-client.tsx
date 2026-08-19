@@ -23,34 +23,23 @@ type OrderForm = {
 const emptyForm: OrderForm = { servicePlanId: "", customerName: "", email: "", phoneNumber: "", companyName: "", billingCycle: 1, note: "" };
 const liveApiEnabled = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL?.trim());
 
-const samplePlans: ServicePlan[] = [
-  { id: "sample-cloud-ssd-2", categoryId: "cloud-server", categoryName: "Cloud Server", name: "Cloud Server SSD 2", slug: "cloud-server-ssd-2", summary: "2 vCPU, 4GB RAM, 80GB SSD", isFeatured: true, isActive: true, currentMonthlyPrice: 880000, promotionalMonthlyPrice: 792000, currency: "VND", activePromotion: { id: "sample-promo", code: "CLOUD10", name: "Ưu đãi tháng 5", discountType: 1, discountValue: 10 } },
-  { id: "sample-cloud-ssd-4", categoryId: "cloud-server", categoryName: "Cloud Server", name: "Cloud Server SSD 4", slug: "cloud-server-ssd-4", summary: "4 vCPU, 8GB RAM, 160GB SSD", isFeatured: false, isActive: true, currentMonthlyPrice: 1490000, promotionalMonthlyPrice: 1341000, currency: "VND", activePromotion: { id: "sample-promo", code: "CLOUD10", name: "Ưu đãi tháng 5", discountType: 1, discountValue: 10 } },
-  { id: "sample-vps-start-2", categoryId: "vps", categoryName: "VPS", name: "VPS Start 2", slug: "vps-start-2", summary: "2 vCPU, 2GB RAM, 80GB NVMe", isFeatured: false, isActive: true, currentMonthlyPrice: 199000, currency: "VND" },
-  { id: "sample-hosting-pro", categoryId: "hosting", categoryName: "Hosting", name: "Hosting Pro", slug: "hosting-pro", summary: "10GB SSD, website tốc độ cao", isFeatured: false, isActive: true, currentMonthlyPrice: 129000, currency: "VND" },
-];
-
 const money = (value: number, currency: string) => `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value)} ${currency}`;
 const number = (value: number, currency = "VND") => money(value, currency);
 
-export function OrderRequestClient({ initialBillingCycle = 1, initialPlanSlug, samplePreview = false }: { initialBillingCycle?: 1 | 12; initialPlanSlug?: string; samplePreview?: boolean }) {
-  const initialPlan = samplePlans.find(item => item.slug === initialPlanSlug);
-  const [plans, setPlans] = useState<ServicePlan[]>(samplePlans);
+export function OrderRequestClient({ initialBillingCycle = 1, initialPlanSlug }: { initialBillingCycle?: 1 | 12; initialPlanSlug?: string }) {
+  const [plans, setPlans] = useState<ServicePlan[]>([]);
   const [planDetails, setPlanDetails] = useState<Record<string, ServicePlanDetail>>({});
-  const [category, setCategory] = useState(initialPlan?.categoryName ?? "");
-  const [form, setForm] = useState<OrderForm>({ ...emptyForm, billingCycle: initialBillingCycle, servicePlanId: initialPlan?.id ?? "" });
-  const [loading, setLoading] = useState(liveApiEnabled && !samplePreview);
+  const [category, setCategory] = useState("");
+  const [form, setForm] = useState<OrderForm>({ ...emptyForm, billingCycle: initialBillingCycle });
+  const [loading, setLoading] = useState(liveApiEnabled);
   const [detailLoading, setDetailLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<OrderConfirmation | null>(null);
   const [customerAccount, setCustomerAccount] = useState<AuthenticatedUser | null>(null);
-  const [accountChecked, setAccountChecked] = useState(samplePreview);
+  const [accountChecked, setAccountChecked] = useState(false);
 
   useEffect(() => {
-    if (samplePreview) {
-      return;
-    }
     let subscribed = true;
     const applyAccount = (user: AuthenticatedUser | null) => {
       if (!subscribed) return;
@@ -68,13 +57,12 @@ export function OrderRequestClient({ initialBillingCycle = 1, initialPlanSlug, s
       if (subscribed) setAccountChecked(true);
     });
     return () => { subscribed = false; };
-  }, [samplePreview]);
+  }, []);
 
   useEffect(() => {
-    if (!liveApiEnabled || samplePreview) return;
+    if (!liveApiEnabled) return;
     void catalogApi.publicPlans()
       .then(result => {
-        if (!result.items.length) return;
         setPlans(result.items);
         const selected = initialPlanSlug ? result.items.find(item => item.slug === initialPlanSlug) : undefined;
         if (selected) {
@@ -84,10 +72,10 @@ export function OrderRequestClient({ initialBillingCycle = 1, initialPlanSlug, s
       })
       .catch(() => undefined)
       .finally(() => setLoading(false));
-  }, [initialPlanSlug, samplePreview]);
+  }, [initialPlanSlug]);
 
   useEffect(() => {
-    if (!liveApiEnabled || samplePreview || !form.servicePlanId) return;
+    if (!liveApiEnabled || !form.servicePlanId) return;
 
     let subscribed = true;
     const timer = window.setTimeout(() => {
@@ -107,41 +95,33 @@ export function OrderRequestClient({ initialBillingCycle = 1, initialPlanSlug, s
       subscribed = false;
       window.clearTimeout(timer);
     };
-  }, [form.servicePlanId, samplePreview]);
+  }, [form.servicePlanId]);
 
-  const categories = useMemo(() => Array.from(new Set(["Cloud Server", "VPS", "Hosting", ...plans.map(item => item.categoryName)])), [plans]);
+  const categories = useMemo(() => Array.from(new Set(plans.map(item => item.categoryName))), [plans]);
   const categoryPlans = useMemo(() => plans.filter(plan => plan.categoryName === category), [category, plans]);
   const planOptions = category ? (categoryPlans.length ? categoryPlans : plans) : [];
   const selectedPlan = useMemo(() => plans.find(item => item.id === form.servicePlanId), [form.servicePlanId, plans]);
   const selectedDetail = selectedPlan ? planDetails[selectedPlan.id] : undefined;
   const pricing = useMemo(() => {
     if (!selectedPlan) return { base: 0, discount: 0, total: 0, hasPrice: false, loading: false };
-    const monthly = selectedPlan.currentMonthlyPrice ?? 0;
     const selectedPrice = getActivePlanPrice(selectedDetail, form.billingCycle);
-    const fallbackBase = form.billingCycle === 12 ? monthly * 12 : monthly;
-    const base = selectedPrice?.amount ?? (samplePreview ? fallbackBase : 0);
+    const base = selectedPrice?.amount ?? 0;
     const livePromotion = selectedDetail ? getBestPromotionPrice(base, selectedDetail.activePromotions, form.billingCycle) : undefined;
-    const previewPromotion = samplePreview
-      ? form.billingCycle === 12
-        ? Math.round(base * .8)
-        : selectedPlan.promotionalMonthlyPrice
-      : undefined;
-    const publicMonthlyPromotion = !samplePreview
-      && form.billingCycle === 1
+    const publicMonthlyPromotion = form.billingCycle === 1
       && typeof selectedPlan.promotionalMonthlyPrice === "number"
       ? selectedPlan.promotionalMonthlyPrice
       : undefined;
-    const discounted = livePromotion ?? previewPromotion ?? publicMonthlyPromotion;
+    const discounted = livePromotion ?? publicMonthlyPromotion;
     const discount = typeof discounted === "number" ? Math.max(0, base - discounted) : 0;
     const total = base - discount;
     return {
       base,
       discount,
       total,
-      hasPrice: Boolean(selectedPrice) || (samplePreview && Boolean(selectedPlan)),
-      loading: !samplePreview && detailLoading && !selectedDetail,
+      hasPrice: Boolean(selectedPrice),
+      loading: detailLoading && !selectedDetail,
     };
-  }, [detailLoading, form.billingCycle, samplePreview, selectedDetail, selectedPlan]);
+  }, [detailLoading, form.billingCycle, selectedDetail, selectedPlan]);
 
   const updateForm = <K extends keyof OrderForm>(field: K, value: OrderForm[K]) => setForm(current => ({ ...current, [field]: value }));
   const changeCategory = (value: string) => {
@@ -155,23 +135,16 @@ export function OrderRequestClient({ initialBillingCycle = 1, initialPlanSlug, s
       setError("Vui lòng chọn dịch vụ và gói / cấu hình trước khi gửi yêu cầu.");
       return;
     }
-    if (!samplePreview && !customerAccount) {
+    if (!customerAccount) {
       setError("Vui lòng đăng nhập tài khoản khách hàng trước khi gửi yêu cầu.");
       return;
     }
-    if (!samplePreview && !pricing.hasPrice) {
+    if (!pricing.hasPrice) {
       setError("Chu kỳ thanh toán này chưa có mức giá đang hiệu lực cho gói đã chọn.");
       return;
     }
     setSubmitting(true);
     setError(null);
-
-    if (samplePreview) {
-      setConfirmation({ id: "PREVIEW-ORDER-001", status: 1, planName: selectedPlan.name, billingCycle: form.billingCycle, quotedAmount: pricing.total, currency: selectedPlan.currency || "VND", createdAt: new Date().toISOString() });
-      setForm(current => ({ ...emptyForm, servicePlanId: current.servicePlanId }));
-      setSubmitting(false);
-      return;
-    }
 
     void orderApi.create({ ...form, companyName: form.companyName || null, note: form.note || null })
       .then(result => { setConfirmation(result); setForm(current => ({ ...emptyForm, servicePlanId: current.servicePlanId, customerName: customerAccount?.fullName ?? "", email: customerAccount?.email ?? "" })); })
@@ -191,7 +164,7 @@ export function OrderRequestClient({ initialBillingCycle = 1, initialPlanSlug, s
     />
     <ScrollReveal className="order-content-reveal" delay={80}>
     <section className="shell py-7 sm:py-8"><div className="grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,.92fr)] lg:items-start">
-      <div className="min-w-0"><section className="rounded-xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600"><OrderIcon kind="document" /></span><h2 className="text-base font-black">Thông tin đăng ký</h2></div>{!samplePreview && accountChecked && !customerAccount && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">Để gửi yêu cầu và theo dõi tiến trình, vui lòng <Link className="font-black text-blue-700 underline" href="/account/login?returnTo=%2Forder">đăng nhập tài khoản khách hàng</Link> trước.</p>}{error && <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">{error}</p>}{pricing.loading && <p className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700" role="status">Đang tải giá theo chu kỳ đã chọn...</p>}{!pricing.loading && selectedPlan && !pricing.hasPrice && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Gói này chưa có mức giá đang hiệu lực cho chu kỳ đã chọn.</p>}<form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={submit}><FormField label="Chọn dịch vụ" required><select className="order-field" value={category} onChange={event => changeCategory(event.target.value)} required><option value="">Chọn dịch vụ</option>{categories.map(item => <option key={item}>{item}</option>)}</select></FormField><FormField label="Chọn gói / cấu hình" required><select className="order-field" disabled={!category || !planOptions.length} value={form.servicePlanId} onChange={event => updateForm("servicePlanId", event.target.value)} required><option value="">Chọn gói / cấu hình</option>{planOptions.map(plan => <option key={plan.id} value={plan.id}>{plan.name} ({plan.summary})</option>)}</select></FormField><fieldset className="sm:col-span-2"><legend className="text-xs font-bold">Chu kỳ thanh toán</legend><div className="mt-1 grid grid-cols-2 overflow-hidden rounded-lg border border-blue-100"><CycleButton active={form.billingCycle === 1} icon="calendar" label="Theo tháng" onClick={() => updateForm("billingCycle", 1)} /><CycleButton active={form.billingCycle === 12} icon="calendar" label="Theo năm" onClick={() => updateForm("billingCycle", 12)} /></div></fieldset><FormField label="Họ và tên" required><input className="order-field" maxLength={160} readOnly={Boolean(customerAccount)} required value={form.customerName} onChange={event => updateForm("customerName", event.target.value)} /></FormField><FormField label="Email" required><input className="order-field" maxLength={256} readOnly={Boolean(customerAccount)} required type="email" value={form.email} onChange={event => updateForm("email", event.target.value)} /></FormField><FormField label="Số điện thoại" required><input className="order-field" maxLength={30} minLength={8} required type="tel" value={form.phoneNumber} onChange={event => updateForm("phoneNumber", event.target.value)} /></FormField><FormField label="Tên công ty (nếu có)"><input className="order-field" maxLength={160} value={form.companyName} onChange={event => updateForm("companyName", event.target.value)} /></FormField><FormField className="sm:col-span-2" label="Nhu cầu / ghi chú thêm"><textarea className="order-field min-h-20 resize-y" maxLength={1000} placeholder="Mô tả nhu cầu, cấu hình mong muốn hoặc yêu cầu đặc biệt..." value={form.note} onChange={event => updateForm("note", event.target.value)} /></FormField><label className="flex items-start gap-2 text-xs leading-5 text-slate-600 sm:col-span-2"><input className="mt-1 h-4 w-4 accent-blue-600" type="checkbox" required /> <span>Tôi đồng ý với <Link className="font-bold text-blue-700 underline" href="/about">điều khoản dịch vụ</Link></span></label><button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2" disabled={submitting || !accountChecked || (!samplePreview && !customerAccount) || pricing.loading || (!samplePreview && !pricing.hasPrice)} type="submit"><OrderIcon kind="send" />{submitting ? "Đang gửi..." : "Gửi yêu cầu đặt dịch vụ"}</button></form></section>{confirmation && <SuccessCard confirmation={confirmation} customerAccount={customerAccount} onReset={() => setConfirmation(null)} />}</div>
+      <div className="min-w-0"><section className="rounded-xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600"><OrderIcon kind="document" /></span><h2 className="text-base font-black">Thông tin đăng ký</h2></div>{accountChecked && !customerAccount && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">Để gửi yêu cầu và theo dõi tiến trình, vui lòng <Link className="font-black text-blue-700 underline" href="/account/login?returnTo=%2Forder">đăng nhập tài khoản khách hàng</Link> trước.</p>}{error && <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">{error}</p>}{pricing.loading && <p className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700" role="status">Đang tải giá theo chu kỳ đã chọn...</p>}{!pricing.loading && selectedPlan && !pricing.hasPrice && <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Gói này chưa có mức giá đang hiệu lực cho chu kỳ đã chọn.</p>}<form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={submit}><FormField label="Chọn dịch vụ" required><select className="order-field" value={category} onChange={event => changeCategory(event.target.value)} required><option value="">Chọn dịch vụ</option>{categories.map(item => <option key={item}>{item}</option>)}</select></FormField><FormField label="Chọn gói / cấu hình" required><select className="order-field" disabled={!category || !planOptions.length} value={form.servicePlanId} onChange={event => updateForm("servicePlanId", event.target.value)} required><option value="">Chọn gói / cấu hình</option>{planOptions.map(plan => <option key={plan.id} value={plan.id}>{plan.name} ({plan.summary})</option>)}</select></FormField><fieldset className="sm:col-span-2"><legend className="text-xs font-bold">Chu kỳ thanh toán</legend><div className="mt-1 grid grid-cols-2 overflow-hidden rounded-lg border border-blue-100"><CycleButton active={form.billingCycle === 1} icon="calendar" label="Theo tháng" onClick={() => updateForm("billingCycle", 1)} /><CycleButton active={form.billingCycle === 12} icon="calendar" label="Theo năm" onClick={() => updateForm("billingCycle", 12)} /></div></fieldset><FormField label="Họ và tên" required><input className="order-field" maxLength={160} readOnly={Boolean(customerAccount)} required value={form.customerName} onChange={event => updateForm("customerName", event.target.value)} /></FormField><FormField label="Email" required><input className="order-field" maxLength={256} readOnly={Boolean(customerAccount)} required type="email" value={form.email} onChange={event => updateForm("email", event.target.value)} /></FormField><FormField label="Số điện thoại" required><input className="order-field" maxLength={30} minLength={8} required type="tel" value={form.phoneNumber} onChange={event => updateForm("phoneNumber", event.target.value)} /></FormField><FormField label="Tên công ty (nếu có)"><input className="order-field" maxLength={160} value={form.companyName} onChange={event => updateForm("companyName", event.target.value)} /></FormField><FormField className="sm:col-span-2" label="Nhu cầu / ghi chú thêm"><textarea className="order-field min-h-20 resize-y" maxLength={1000} placeholder="Mô tả nhu cầu, cấu hình mong muốn hoặc yêu cầu đặc biệt..." value={form.note} onChange={event => updateForm("note", event.target.value)} /></FormField><label className="flex items-start gap-2 text-xs leading-5 text-slate-600 sm:col-span-2"><input className="mt-1 h-4 w-4 accent-blue-600" type="checkbox" required /> <span>Tôi đồng ý với <Link className="font-bold text-blue-700 underline" href="/about">điều khoản dịch vụ</Link></span></label><button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2" disabled={submitting || !accountChecked || !customerAccount || pricing.loading || !pricing.hasPrice} type="submit"><OrderIcon kind="send" />{submitting ? "Đang gửi..." : "Gửi yêu cầu đặt dịch vụ"}</button></form></section>{confirmation && <SuccessCard confirmation={confirmation} customerAccount={customerAccount} onReset={() => setConfirmation(null)} />}</div>
       <OrderSummary billingCycle={form.billingCycle} plan={selectedPlan} pricing={pricing} />
     </div></section>
     </ScrollReveal>

@@ -7,8 +7,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-var visualQaData = builder.Configuration.GetValue<bool>("Seed:VisualQaData");
-VisualQaSeedGuard.Validate(visualQaData, builder.Environment.EnvironmentName);
 var connectionString = builder.Configuration.GetConnectionString("CloudServiceStore")
     ?? throw new InvalidOperationException("ConnectionStrings:CloudServiceStore is required.");
 
@@ -68,7 +66,7 @@ await DatabaseStartup.ExecuteWithRetryAsync(
     {
         await using var scope = app.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CloudServiceStoreDbContext>();
-        await dbContext.SeedAsync(builder.Configuration["Seed:AdminPassword"], visualQaData);
+        await dbContext.SeedAsync(builder.Configuration["Seed:AdminPassword"]);
     },
     onRetry: (exception, attempt, delay) => databaseStartupLogger.LogWarning(
         exception,

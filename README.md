@@ -11,21 +11,22 @@ Website giới thiệu dịch vụ Cloud và tiếp nhận yêu cầu đặt VPS
 ## Chạy local
 
 1. Cài .NET SDK 10, Node.js 24+ và Docker Desktop.
-2. Sao chép `.env.example` thành `.env` và đổi hai mật khẩu demo.
+2. Sao chép `.env.example` thành `.env`, sau đó thay các giá trị phát triển trong file `.env`.
 3. Chạy `docker compose up --build`.
-4. API health check: `http://localhost:8080/health`.
+4. Terminal khác: chạy `cd frontend; npm ci; npm run dev` để mở frontend tại `http://localhost:3000`.
+5. API health check: `http://localhost:8080/health`.
 
-Khi database trống, API chạy EF migrations và seed hai tài khoản demo: `admin@cloud.local`, `editor@cloud.local`. Cả hai dùng giá trị `SEED_ADMIN_PASSWORD` chỉ để phát triển; phải đổi trước khi deploy. Seed mặc định không đưa dữ liệu vận hành giả vào Catalog/News.
+Khi database trống, API chạy EF migrations và seed hai tài khoản demo. Seed mặc định không đưa dữ liệu vận hành giả vào Catalog/News.
 
-### Dữ liệu demo Visual QA
+### Tài khoản demo
 
-Để demo đầy đủ Catalog, Pricing, Promotion, News, Order, Affiliate, Dashboard và Audit Log, dùng bộ seed cô lập:
+- **Admin:** `admin@cloud.local`
+- **Editor:** `editor@cloud.local`
+- **Mật khẩu ban đầu:** giá trị `SEED_ADMIN_PASSWORD` trong file `.env` (mẫu trong `.env.example` là `LocalDev#Admin2026!`). Cả hai tài khoản staff dùng cùng mật khẩu seed này trong môi trường phát triển.
+- `MSSQL_SA_PASSWORD` chỉ là mật khẩu tài khoản `sa` của SQL Server, không phải mật khẩu đăng nhập website.
+- **Customer:** không seed sẵn; đăng ký tài khoản mới tại `/login` để thực hiện luồng đặt dịch vụ và affiliate.
 
-```powershell
-docker compose -f docker-compose.visual-qa.yml up --build
-```
-
-Frontend chạy tại `http://localhost:3002`, API tại `http://localhost:8081`. Bộ seed có sáu nhóm dịch vụ bắt buộc: VPS, Hosting, Domain, Email doanh nghiệp, SSL và Firewall chống DDoS; dữ liệu này chỉ dành cho Development/Testing.
+Dữ liệu Catalog, Pricing, Promotion, News, Order, Affiliate, Dashboard và Audit Log được đọc/ghi trên SQL Server thật của stack chính. Docker lưu database trong volume `sqlserver-data`; volume và dữ liệu runtime không được đưa lên Git, chỉ migration và mã nguồn được quản lý phiên bản.
 
 ## Authentication
 
@@ -74,7 +75,7 @@ Khi chạy API không qua Docker, đặt `Jwt__SigningKey` (ít nhất 32 ký t�
 - Chạy toàn bộ backend: `dotnet test CloudServiceStore.sln --no-restore`.
 - Thu coverage Cobertura: `dotnet test CloudServiceStore.sln --collect:"XPlat Code Coverage" --results-directory TestResults`.
 - CI lưu các file `coverage.cobertura.xml` thành artifact `coverage-reports` trong 14 ngày.
-- Mốc kiểm chứng gần nhất: 186 backend test pass (Domain 22, Application 103, Integration 61) và 143 frontend test pass. Coverage source-only sau khi loại `obj` và EF migrations: Domain `98,85%`, Application `89,07%`, Infrastructure `86,45%`, WebApi `58,05%`.
+- Mốc kiểm chứng gần nhất: 183 backend test pass (Domain 22, Application 103, Integration 58) và 141 frontend test pass. Coverage source-only sau khi loại `obj` và EF migrations: Domain `98,85%`, Application `89,07%`, Infrastructure `86,45%`, WebApi `58,05%`.
 - Frontend đã được kiểm tra ở viewport 360 px: menu mobile, bảng giá cuộn nội bộ, form Order/Affiliate và Admin Dashboard không tràn ngang.
 - Trước khi chạy `npm run build`, dừng phiên `next dev` đang dùng chung thư mục `.next`; `tsc --noEmit` phải đạt trong mọi trường hợp.
 

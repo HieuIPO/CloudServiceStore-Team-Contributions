@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { newsApi, type NewsArticle, type NewsCategory } from "@/lib/api";
-import { sampleNewsArticles, sampleNewsCategories, sampleFeaturedArticle } from "@/lib/news-sample";
 import { resolveNewsThumbnail } from "@/lib/news-thumbnail";
 import { NewsIcon, NewsNewsletterArt } from "@/components/news-art";
 import { PublicPageBanner } from "@/components/public-page-banner";
@@ -26,16 +25,16 @@ const normalizeNewsSearchText = (value: string) => value
   .normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "");
 
-export function NewsPublic({ samplePreview = false }: { samplePreview?: boolean }) {
-  const [articles, setArticles] = useState<NewsArticle[]>(samplePreview ? sampleNewsArticles : []);
-  const [categories, setCategories] = useState<NewsCategory[]>(samplePreview ? sampleNewsCategories : []);
+export function NewsPublic() {
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [categories, setCategories] = useState<NewsCategory[]>([]);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(liveApiEnabled && !samplePreview);
+  const [loading, setLoading] = useState(liveApiEnabled);
 
   useEffect(() => {
-    if (!liveApiEnabled || samplePreview) return;
+    if (!liveApiEnabled) return;
     let active = true;
     void Promise.all([newsApi.publicCategories(), newsApi.publicArticles({ page: 1, pageSize: 100 })])
       .then(([categoryResult, articleResult]) => {
@@ -46,7 +45,7 @@ export function NewsPublic({ samplePreview = false }: { samplePreview?: boolean 
       .catch(() => undefined)
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [samplePreview]);
+  }, []);
 
   const filteredArticles = useMemo(() => {
     const keyword = normalizeNewsSearchText(search.trim());
@@ -60,7 +59,7 @@ export function NewsPublic({ samplePreview = false }: { samplePreview?: boolean 
   const hasFeaturedLayout = !search.trim() && !categoryId;
   const selectedFeatured = articles.find(article => article.isFeatured);
   const featuredCandidate = hasFeaturedLayout
-    ? (selectedFeatured ?? (samplePreview ? sampleFeaturedArticle : filteredArticles[0] ?? null))
+    ? (selectedFeatured ?? filteredArticles[0] ?? null)
     : null;
   const cardArticles = hasFeaturedLayout && featuredCandidate
     ? filteredArticles.filter(article => article.id !== featuredCandidate.id)
