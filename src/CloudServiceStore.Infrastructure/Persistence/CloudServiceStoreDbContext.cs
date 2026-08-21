@@ -21,6 +21,8 @@ public sealed class CloudServiceStoreDbContext(DbContextOptions<CloudServiceStor
     public DbSet<AffiliateProgramContent> AffiliateProgramContents => Set<AffiliateProgramContent>();
     public DbSet<AffiliateApplication> AffiliateApplications => Set<AffiliateApplication>();
     public DbSet<AffiliateApplicationStatusHistory> AffiliateApplicationStatusHistories => Set<AffiliateApplicationStatusHistory>();
+    public DbSet<ContactRequest> ContactRequests => Set<ContactRequest>();
+    public DbSet<ContactRequestStatusHistory> ContactRequestStatusHistories => Set<ContactRequestStatusHistory>();
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();

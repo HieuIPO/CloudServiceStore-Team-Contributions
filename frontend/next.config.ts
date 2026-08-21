@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const apiOrigin = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
 const nextConfig: NextConfig = {
   // The Docker-hosted dev server receives the HMR request from the bridge
   // gateway. Allow the local development origins so Turbopack can keep the
@@ -12,7 +14,15 @@ const nextConfig: NextConfig = {
     "127.0.0.1:3001",
     "127.0.0.1:3002",
     "172.18.128.1"
-  ]
+  ],
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiOrigin}/api/:path*`
+      }
+    ];
+  }
 };
 
 export default nextConfig;
