@@ -9,7 +9,8 @@ import {
   IconTag,
   IconAppWindow,
   IconFileSpreadsheet,
-  IconHistory
+  IconHistory,
+  IconMessageCircle
 } from "@tabler/icons-react";
 
 export type AdminNavItem = {
@@ -55,6 +56,12 @@ export const adminNavGroups: AdminNavGroup[] = [
         title: "Hồ sơ Affiliate",
         href: "/admin/affiliates",
         icon: IconUsers,
+        roles: ["Admin", "Editor"],
+      },
+      {
+        title: "Yêu cầu liên hệ",
+        href: "/admin/contact-requests",
+        icon: IconMessageCircle,
         roles: ["Admin", "Editor"],
       }
     ]

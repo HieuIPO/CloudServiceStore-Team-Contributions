@@ -40,6 +40,11 @@ export type AffiliateDetail = AffiliateListItem & { audienceDescription: string;
 export type CustomerAffiliateListItem = { id: string; fullName: string; companyName?: string; status: AffiliateStatus; createdAt: string; updatedAt?: string };
 export type CustomerAffiliateStatusHistory = { id: string; fromStatus: AffiliateStatus; toStatus: AffiliateStatus; createdAt: string };
 export type CustomerAffiliateDetail = CustomerAffiliateListItem & { email: string; phoneNumber: string; websiteUrl?: string; promotionChannels: string; audienceDescription: string; experienceDescription?: string; statusHistory: CustomerAffiliateStatusHistory[] };
+export type ContactRequestStatus = 1 | 2 | 3 | 4 | 5;
+export type ContactRequestConfirmation = { id: string; status: ContactRequestStatus; createdAt: string };
+export type ContactRequestListItem = { id: string; fullName: string; email: string; phoneNumber: string; companyName?: string | null; subject: string; status: ContactRequestStatus; createdAt: string };
+export type ContactRequestStatusHistory = { id: string; fromStatus: ContactRequestStatus; toStatus: ContactRequestStatus; note?: string | null; changedBy?: string | null; createdAt: string };
+export type ContactRequestDetail = ContactRequestListItem & { message: string; resolutionNote?: string | null; resolvedBy?: string | null; resolvedAt?: string | null; updatedAt?: string | null; statusHistory: ContactRequestStatusHistory[]; allowedTransitions: ContactRequestStatus[] };
 export type NamedCount = { name: string; count: number };
 export type MonthlyOrder = { year: number; month: number; count: number; quotedAmount: number; approvedCount: number };
 export type OrderSummary = { from: string; to: string; totalOrders: number; periodOrders: number; pendingOrders: number; approvedOrders: number; approvedQuotedAmount: number; totalAffiliateApplications: number; pendingAffiliateApplications: number; publishedNewsArticles: number; statuses: NamedCount[]; monthlyOrders: MonthlyOrder[] };
@@ -372,6 +377,25 @@ export const affiliateApi = {
   detail: (id: string) => apiFetch<AffiliateDetail>(`/api/v1/affiliate-applications/${id}`),
   updateStatus: (id: string, status: AffiliateStatus, note?: string) =>
     apiFetch<AffiliateDetail>(`/api/v1/affiliate-applications/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, note: note || null }) }),
+};
+
+const contactRequestQuery = (params: { page?: number; pageSize?: number; search?: string; status?: ContactRequestStatus; createdFrom?: string; createdTo?: string }) => {
+  const query = new URLSearchParams({ page: String(params.page ?? 1), pageSize: String(params.pageSize ?? 20) });
+  if (params.search) query.set("search", params.search);
+  if (params.status) query.set("status", String(params.status));
+  if (params.createdFrom) query.set("createdFrom", params.createdFrom);
+  if (params.createdTo) query.set("createdTo", params.createdTo);
+  return query.toString();
+};
+
+export const contactRequestsApi = {
+  create: (body: { fullName: string; email: string; phoneNumber: string; companyName?: string; subject: string; message: string }) =>
+    apiFetch<ContactRequestConfirmation>("/api/v1/contact-requests", { method: "POST", body: JSON.stringify(body) }),
+  all: (params: { page?: number; pageSize?: number; search?: string; status?: ContactRequestStatus; createdFrom?: string; createdTo?: string } = {}, signal?: AbortSignal) =>
+    apiFetch<PagedResult<ContactRequestListItem>>(`/api/v1/contact-requests?${contactRequestQuery(params)}`, { signal }),
+  detail: (id: string) => apiFetch<ContactRequestDetail>(`/api/v1/contact-requests/${id}`),
+  updateStatus: (id: string, status: ContactRequestStatus, note?: string) =>
+    apiFetch<ContactRequestDetail>(`/api/v1/contact-requests/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, note: note || null }) }),
 };
 
 const reportPeriodQuery = (from?: string, to?: string) => {

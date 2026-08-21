@@ -23,6 +23,7 @@ public sealed class CloudServiceStoreApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:AccessTokenMinutes", "15");
         builder.UseSetting("Seed:AdminPassword", SeedPassword);
         builder.UseSetting("RateLimiting:LoginPermitLimit", "20");
+        builder.UseSetting("RateLimiting:ContactPermitLimit", "2");
         builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost:3000");
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
@@ -35,6 +36,7 @@ public sealed class CloudServiceStoreApiFactory : WebApplicationFactory<Program>
                 ["Jwt:AccessTokenMinutes"] = "15",
                 ["Seed:AdminPassword"] = SeedPassword,
                 ["RateLimiting:LoginPermitLimit"] = "20",
+                ["RateLimiting:ContactPermitLimit"] = "2",
                 ["Cors:AllowedOrigins:0"] = "http://localhost:3000"
             });
         });

@@ -28,6 +28,7 @@ builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => poli
     .AllowAnyMethod()
     .AllowCredentials()));
 builder.Services.AddApiRateLimiting(builder.Configuration);
+builder.Services.ConfigureContactRequestRateLimiting(builder.Configuration);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -52,6 +53,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ManageNews", policy => policy.RequireRole("Admin", "Editor"));
     options.AddPolicy("ManageOrders", policy => policy.RequireRole("Admin", "Editor"));
     options.AddPolicy("ManageAffiliates", policy => policy.RequireRole("Admin", "Editor"));
+    options.AddPolicy("ManageContactRequests", policy => policy.RequireRole("Admin", "Editor"));
     options.AddPolicy("ManageAffiliateProgram", policy => policy.RequireRole("Admin"));
     options.AddPolicy("ViewDashboard", policy => policy.RequireRole("Admin"));
     options.AddPolicy("ExportOrders", policy => policy.RequireRole("Admin"));
