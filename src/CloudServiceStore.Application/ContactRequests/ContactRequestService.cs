@@ -112,7 +112,7 @@ public sealed partial class ContactRequestService(
         if (id == Guid.Empty || actorId == Guid.Empty)
             throw new ContactRequestValidationException("A valid request and actor are required.");
 
-        if (!Enum.IsDefined(request.Status))
+        if (!Enum.IsDefined(typeof(ContactRequestStatus), request.Status))
             throw new ContactRequestValidationException(
                 "Contact request status is not supported.");
 
@@ -259,7 +259,8 @@ public sealed partial class ContactRequestService(
             throw new ContactRequestValidationException(
                 "Search must be 256 characters or fewer.");
 
-        if (query.Status is not null && !Enum.IsDefined(query.Status.Value))
+        if (query.Status is not null
+            && !Enum.IsDefined(typeof(ContactRequestStatus), query.Status.Value))
             throw new ContactRequestValidationException(
                 "Contact request status is not supported.");
 

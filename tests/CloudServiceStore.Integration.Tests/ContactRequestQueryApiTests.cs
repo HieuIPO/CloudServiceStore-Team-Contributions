@@ -144,11 +144,12 @@ public sealed class ContactRequestQueryApiTests(CloudServiceStoreApiFactory fact
         Assert.Single(document.RootElement.GetProperty("statusHistory").EnumerateArray());
         Assert.Equal(history.Id, document.RootElement.GetProperty("statusHistory")[0].GetProperty("id").GetGuid());
         Assert.Equal(
-            [
+            new[]
+            {
                 (int)ContactRequestStatus.Approved,
                 (int)ContactRequestStatus.Rejected,
                 (int)ContactRequestStatus.Cancelled
-            ],
+            },
             document.RootElement.GetProperty("allowedTransitions").EnumerateArray()
                 .Select(value => value.GetInt32())
                 .ToArray());

@@ -132,7 +132,11 @@ public sealed class ContactRequestRepository(CloudServiceStoreDbContext db)
         string normalizedEmail,
         CancellationToken cancellationToken)
     {
-        await using var command = db.Database.GetDbConnection().CreateCommand();
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+            await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
         command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
         command.CommandText = """
             DECLARE @result int;
