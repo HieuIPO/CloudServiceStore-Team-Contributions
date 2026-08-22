@@ -5,7 +5,6 @@ on:
     branches: [dev, main, feature/contact-request-management]
   pull_request:
     branches: [dev, main]
-  workflow_dispatch:
 
 permissions:
   contents: read
