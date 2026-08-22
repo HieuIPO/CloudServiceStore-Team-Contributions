@@ -65,7 +65,7 @@ public sealed class ContactRequestsController(
         });
 
     [Authorize(Policy = "ManageContactRequests")]
-    [HttpPatch("{id:guid}/status")]
+    [HttpPost("{id:guid}/status")]
     [ProducesResponseType(typeof(ContactRequestDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]

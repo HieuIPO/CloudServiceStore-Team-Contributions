@@ -284,7 +284,7 @@ public sealed class ContactRequestServiceTests
         var repository = CreateRepository();
         var request = ExistingRequest(ContactRequestStatus.Pending);
         repository.Setup(x => x.GetAsync(It.IsAny<ContactRequestQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(((IReadOnlyList<ContactRequest>)[request], 1));
+            .ReturnsAsync(((IReadOnlyList<ContactRequest>)new[] { request }, 1));
         var service = CreateService(repository);
 
         var result = await service.GetAsync(new(Page: 1, PageSize: 20), CancellationToken.None);
@@ -330,9 +330,16 @@ public sealed class ContactRequestServiceTests
         Assert.NotNull(detail);
         Assert.Equal(request.Message, detail.Message);
         Assert.Equal(ContactRequestStatus.Contacted, detail.Status);
-        Assert.Equal([receivedHistory.Id, firstHistory.Id], detail.StatusHistory.Select(item => item.Id));
         Assert.Equal(
-            [ContactRequestStatus.Approved, ContactRequestStatus.Rejected, ContactRequestStatus.Cancelled],
+            new[] { receivedHistory.Id, firstHistory.Id },
+            detail.StatusHistory.Select(item => item.Id));
+        Assert.Equal(
+            new[]
+            {
+                ContactRequestStatus.Approved,
+                ContactRequestStatus.Rejected,
+                ContactRequestStatus.Cancelled
+            },
             detail.AllowedTransitions);
         Assert.Null(empty);
         repository.Verify(x => x.FindAsync(Guid.Empty, It.IsAny<CancellationToken>()), Times.Never);
