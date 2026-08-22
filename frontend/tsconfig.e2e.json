@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "e2e/**/*.ts",
+    "playwright.ci.config.mjs"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
+}
