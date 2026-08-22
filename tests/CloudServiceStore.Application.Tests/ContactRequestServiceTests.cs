@@ -187,6 +187,7 @@ public sealed class ContactRequestServiceTests
     {
         var repository = CreateRepository();
         const string privateMessage = "Thông tin khách hàng riêng tư không được log nguyên văn.";
+        const string privateResolutionNote = "Ghi chú nội bộ có thông tin liên hệ riêng tư.";
         var request = ExistingRequest(ContactRequestStatus.Contacted);
         request.Message = privateMessage;
         var actorId = Guid.NewGuid();
@@ -195,7 +196,7 @@ public sealed class ContactRequestServiceTests
 
         await service.UpdateStatusAsync(
             request.Id,
-            new(ContactRequestStatus.Approved, "Đã xử lý."),
+            new(ContactRequestStatus.Approved, privateResolutionNote),
             actorId,
             null,
             CancellationToken.None);
@@ -206,7 +207,9 @@ public sealed class ContactRequestServiceTests
             nameof(ContactRequest),
             request.Id,
             It.Is<string?>(oldValues => oldValues != null && !oldValues.Contains(privateMessage)),
-            It.Is<string?>(newValues => newValues != null && !newValues.Contains(privateMessage)),
+            It.Is<string?>(newValues => newValues != null
+                && !newValues.Contains(privateMessage)
+                && !newValues.Contains(privateResolutionNote)),
             Now,
             null), Times.Once);
     }

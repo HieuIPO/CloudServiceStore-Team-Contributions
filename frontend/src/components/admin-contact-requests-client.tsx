@@ -98,7 +98,7 @@ export function AdminContactRequestsClient() {
     </section>
 
     <form className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_12rem_auto]" onSubmit={submitFilters}>
-      <label className="min-w-0"><span className="sr-only">Tìm kiếm yêu cầu</span><input className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100" placeholder="Tìm theo tên, email, số điện thoại hoặc chủ đề" value={searchDraft} onChange={event => setSearchDraft(event.target.value)} /></label>
+      <label className="min-w-0"><span className="sr-only">Tìm kiếm yêu cầu</span><input className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100" placeholder="Tìm theo tên, email, công ty hoặc chủ đề" value={searchDraft} onChange={event => setSearchDraft(event.target.value)} /></label>
       <label><span className="sr-only">Lọc theo trạng thái</span><select className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-100" value={status} onChange={event => { setStatus(event.target.value ? Number(event.target.value) as ContactRequestStatus : ""); setPage(1); }}><option value="">Tất cả trạng thái</option>{contactRequestStatusValues.map(value => <option key={value} value={value}>{contactRequestStatusMeta[value].label}</option>)}</select></label>
       <button className="h-11 rounded-xl bg-sky-600 px-6 text-sm font-bold text-white transition hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-200" type="submit">Lọc kết quả</button>
     </form>

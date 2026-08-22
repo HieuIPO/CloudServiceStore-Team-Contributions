@@ -6,6 +6,7 @@ using CloudServiceStore.Domain.Entities;
 using CloudServiceStore.Domain.Enums;
 using CloudServiceStore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -153,6 +154,48 @@ public sealed class ContactRequestQueryApiTests(CloudServiceStoreApiFactory fact
             document.RootElement.GetProperty("allowedTransitions").EnumerateArray()
                 .Select(value => value.GetInt32())
                 .ToArray());
+    }
+
+    [Fact]
+    public async Task Admin_status_update_persists_one_new_history_event()
+    {
+        var request = NewRequest($"History update {Guid.NewGuid():N}", ContactRequestStatus.Contacted);
+        var initialHistory = new ContactRequestStatusHistory
+        {
+            Id = Guid.NewGuid(),
+            ContactRequestId = request.Id,
+            FromStatus = ContactRequestStatus.Pending,
+            ToStatus = ContactRequestStatus.Contacted,
+            Note = "Đã liên hệ.",
+            CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-1)
+        };
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<CloudServiceStoreDbContext>();
+            db.ContactRequests.Add(request);
+            db.ContactRequestStatusHistories.Add(initialHistory);
+            await db.SaveChangesAsync();
+        }
+
+        using var admin = CreateAuthenticatedClient("Admin");
+        using var response = await admin.PatchAsJsonAsync(
+            $"/api/v1/contact-requests/{request.Id}/status",
+            new { status = (int)ContactRequestStatus.Approved, note = "Đã duyệt." });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<CloudServiceStoreDbContext>();
+        var histories = await verificationDb.ContactRequestStatusHistories
+            .Where(item => item.ContactRequestId == request.Id)
+            .OrderBy(item => item.CreatedAt)
+            .ToListAsync();
+
+        Assert.Equal(2, histories.Count);
+        Assert.Single(histories, item =>
+            item.FromStatus == ContactRequestStatus.Contacted
+            && item.ToStatus == ContactRequestStatus.Approved);
     }
 
     [Fact]

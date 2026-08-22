@@ -167,6 +167,8 @@ public sealed partial class ContactRequestService(
         };
 
         contactRequest.StatusHistory.Add(history);
+        // The collection keeps the returned detail DTO current; the repository
+        // explicitly tracks this one new dependent for persistence.
         repository.AddStatusHistory(history);
         repository.AddAudit(
             actorId,
@@ -174,11 +176,7 @@ public sealed partial class ContactRequestService(
             nameof(ContactRequest),
             contactRequest.Id,
             JsonSerializer.Serialize(new { Status = previousStatus }),
-            JsonSerializer.Serialize(new
-            {
-                Status = contactRequest.Status,
-                Note = note
-            }),
+            JsonSerializer.Serialize(new { Status = contactRequest.Status }),
             now,
             ipAddress);
 
