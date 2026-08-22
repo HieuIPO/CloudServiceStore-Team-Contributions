@@ -77,7 +77,8 @@ public sealed class ContactRequestsControllerTests
         var service = new Mock<IContactRequestService>();
         var query = new ContactRequestQuery(Page: 2, PageSize: 10, Status: ContactRequestStatus.Pending);
         service.Setup(x => x.GetAsync(query, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new PagedResult<ContactRequestListItemDto>([], 2, 10, 0));
+            .ReturnsAsync(new PagedResult<ContactRequestListItemDto>(
+                Array.Empty<ContactRequestListItemDto>(), 2, 10, 0));
         var controller = CreateController(service);
 
         var result = await controller.Get(query, CancellationToken.None);
@@ -248,7 +249,7 @@ public sealed class ContactRequestsControllerTests
         if (userId is { } id)
         {
             context.User = new ClaimsPrincipal(new ClaimsIdentity(
-                [new Claim(ClaimTypes.NameIdentifier, id.ToString())],
+                new[] { new Claim(ClaimTypes.NameIdentifier, id.ToString()) },
                 "Test"));
         }
 
@@ -265,5 +266,7 @@ public sealed class ContactRequestsControllerTests
     private static ContactRequestDetailDto Detail(Guid id, ContactRequestStatus status) =>
         new(id, "Nguyen Phuoc Duy", "duy@example.com", "0901234567", null,
             "Tư vấn cloud", "Tôi cần tư vấn dịch vụ cloud cho doanh nghiệp.",
-            status, null, null, null, DateTimeOffset.UtcNow, null, [], []);
+            status, null, null, null, DateTimeOffset.UtcNow, null,
+            Array.Empty<ContactRequestStatusHistoryDto>(),
+            Array.Empty<ContactRequestStatus>());
 }

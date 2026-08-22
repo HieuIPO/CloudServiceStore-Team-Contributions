@@ -395,7 +395,7 @@ export const contactRequestsApi = {
     apiFetch<PagedResult<ContactRequestListItem>>(`/api/v1/contact-requests?${contactRequestQuery(params)}`, { signal }),
   detail: (id: string) => apiFetch<ContactRequestDetail>(`/api/v1/contact-requests/${id}`),
   updateStatus: (id: string, status: ContactRequestStatus, note?: string) =>
-    apiFetch<ContactRequestDetail>(`/api/v1/contact-requests/${id}/status`, { method: "PATCH", body: JSON.stringify({ status, note: note || null }) }),
+    apiFetch<ContactRequestDetail>(`/api/v1/contact-requests/${id}/status`, { method: "POST", body: JSON.stringify({ status, note: note || null }) }),
 };
 
 const reportPeriodQuery = (from?: string, to?: string) => {
