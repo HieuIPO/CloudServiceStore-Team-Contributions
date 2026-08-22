@@ -2,7 +2,7 @@ name: Contact Request CI
 
 on:
   push:
-    branches: [dev, main, feature/contact-request-management, feature/contact-request-followup-fixes]
+    branches: [dev, main, "feature/contact-*"]
   pull_request:
     branches: [dev, main]
   workflow_dispatch:
