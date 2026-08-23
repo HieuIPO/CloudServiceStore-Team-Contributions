@@ -16,6 +16,10 @@ test("public News parses route query and sends search/category/page to the serve
   assert.match(server, /\/api\/v1\/news-articles\?\$\{articleQuery\}/);
   assert.match(route, /const query = getPublicNewsQuery\(await searchParams\)/);
   assert.match(route, /const data = await getPublicNewsPage\(query\)/);
+  const queryIndex = route.indexOf("getPublicNewsQuery(await searchParams)");
+  const pageIndex = route.indexOf("getPublicNewsPage(query)");
+  const returnIndex = route.indexOf("return <");
+  assert.ok(queryIndex >= 0 && queryIndex < pageIndex && pageIndex < returnIndex, "News list must fetch SSR data before returning its UI");
 });
 
 test("public News rendering no longer loads 100 articles and filters them in the browser", () => {
@@ -25,4 +29,11 @@ test("public News rendering no longer loads 100 articles and filters them in the
   assert.match(view, /method="get"/);
   assert.match(view, /getNewsHref/);
   assert.match(view, /<Pagination query=\{query\} result=\{articles\}/);
+});
+
+test("News SSR does not convert an unavailable API into an empty page or a false 404", () => {
+  assert.match(server, /class NewsApiError/);
+  assert.match(server, /await Promise\.all\(\[/);
+  assert.doesNotMatch(server, /Promise\.allSettled/);
+  assert.match(server, /if \(error instanceof NewsApiError && error\.status === 404\) return null;/);
 });

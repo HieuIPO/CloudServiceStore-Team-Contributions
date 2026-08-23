@@ -16,13 +16,12 @@ export type PublicNewsQuery = {
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
-const emptyPage = <T,>(page: number, pageSize: number): PagedResult<T> => ({
-  items: [],
-  page,
-  pageSize,
-  totalCount: 0,
-  totalPages: 1,
-});
+class NewsApiError extends Error {
+  constructor(public readonly status: number) {
+    super(`News API request failed with ${status}`);
+    this.name = "NewsApiError";
+  }
+}
 
 const firstValue = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 
@@ -51,7 +50,7 @@ const getJson = async <T,>(path: string): Promise<T> => {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
-  if (!response.ok) throw new Error(`News API request failed with ${response.status}`);
+  if (!response.ok) throw new NewsApiError(response.status);
   return response.json() as Promise<T>;
 };
 
@@ -89,14 +88,14 @@ export async function getPublicNewsPage(query: PublicNewsQuery): Promise<{ artic
   if (query.search) articleQuery.set("search", query.search);
   if (query.categoryId) articleQuery.set("categoryId", query.categoryId);
 
-  const [categoryResult, articleResult] = await Promise.allSettled([
+  const [categories, articles] = await Promise.all([
     getJson<PagedResult<NewsCategory>>("/api/v1/news-categories?page=1&pageSize=100"),
     getJson<PagedResult<NewsArticle>>(`/api/v1/news-articles?${articleQuery}`),
   ]);
 
   return {
-    categories: categoryResult.status === "fulfilled" ? categoryResult.value.items : [],
-    articles: articleResult.status === "fulfilled" ? articleResult.value : emptyPage<NewsArticle>(query.page, NEWS_PAGE_SIZE),
+    categories: categories.items,
+    articles,
   };
 }
 
@@ -104,7 +103,8 @@ export async function getPublicNewsDetail(slug: string, preview: boolean): Promi
   if (preview) return getSampleArticleDetail(slug);
   try {
     return await getJson<NewsArticleDetail>(`/api/v1/news-articles/${encodeURIComponent(slug)}`);
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof NewsApiError && error.status === 404) return null;
+    throw error;
   }
 }

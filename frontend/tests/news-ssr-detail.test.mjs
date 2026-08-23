@@ -13,4 +13,8 @@ test("News detail resolves its public article on the server before rendering the
   assert.match(detailRoute, /<NewsDetailClient article=\{article\} samplePreview=\{samplePreview\}/);
   assert.match(detailClient, /NewsDetailClient\(\{ article, samplePreview = false \}/);
   assert.doesNotMatch(detailClient, /newsApi\.articleBySlug|useEffect/);
+  const fetchIndex = detailRoute.indexOf("getPublicNewsDetail(slug, samplePreview)");
+  const notFoundIndex = detailRoute.indexOf("if (!article) notFound()");
+  const returnIndex = detailRoute.indexOf("return <");
+  assert.ok(fetchIndex >= 0 && fetchIndex < notFoundIndex && notFoundIndex < returnIndex, "News detail must fetch and handle notFound before returning its client UI");
 });
