@@ -2,7 +2,7 @@ name: Contact Request CI
 
 on:
   push:
-    branches: [dev, main, feature/contact-request-management]
+    branches: [dev, main, "feature/contact-*"]
   pull_request:
     branches: [dev, main]
   workflow_dispatch:
@@ -77,6 +77,9 @@ jobs:
         run: |
           npm install --no-save --package-lock=false @playwright/test@1.62.1
           npx playwright install --with-deps chromium
+      - name: Typecheck Contact E2E
+        working-directory: frontend
+        run: npx tsc --project tsconfig.e2e.json --noEmit
       - name: Run Contact public E2E
         working-directory: frontend
         run: npx playwright test e2e/contact-public.spec.ts --config=playwright.ci.config.mjs --reporter=list
