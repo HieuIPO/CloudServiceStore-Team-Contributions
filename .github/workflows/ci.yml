@@ -80,9 +80,9 @@ jobs:
       - name: Typecheck Contact E2E
         working-directory: frontend
         run: npx tsc --project tsconfig.e2e.json --noEmit
-      - name: Run Contact public E2E
+      - name: Run Contact public and admin E2E
         working-directory: frontend
-        run: npx playwright test e2e/contact-public.spec.ts --config=playwright.ci.config.mjs --reporter=list
+        run: npx playwright test e2e/contact-public.spec.ts e2e/contact-admin.spec.ts --config=playwright.ci.config.mjs --reporter=list
       - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@v5
