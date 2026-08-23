@@ -3,38 +3,20 @@
 
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { useEffect, useMemo, useState } from "react";
-import { ApiError, newsApi, type NewsArticle, type NewsArticleDetail } from "@/lib/api";
-import { getSampleArticleDetail, sampleFeaturedArticle, sampleNewsArticles } from "@/lib/news-sample";
+import { useState } from "react";
+import { type NewsArticle, type NewsArticleDetail } from "@/lib/api";
+import { sampleFeaturedArticle, sampleNewsArticles } from "@/lib/news-sample";
 import { resolveNewsThumbnail } from "@/lib/news-thumbnail";
 import { NewsIcon, NewsSupportArt } from "@/components/news-art";
 
-const liveApiEnabled = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL?.trim());
 const formatDate = (value?: string) => value ? new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "24/05/2024";
 
-export function NewsDetailClient({ samplePreview = false, slug }: { samplePreview?: boolean; slug: string }) {
-  const fallback = useMemo(() => samplePreview ? getSampleArticleDetail(slug) : null, [samplePreview, slug]);
-  const [article, setArticle] = useState<NewsArticleDetail | null>(fallback);
-  const [loading, setLoading] = useState(liveApiEnabled && !samplePreview);
-  const [error, setError] = useState<string | null>(null);
+export function NewsDetailClient({ article, samplePreview = false }: { article: NewsArticleDetail; samplePreview?: boolean }) {
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!liveApiEnabled || samplePreview) return;
-    let active = true;
-    void newsApi.articleBySlug(slug)
-      .then(result => { if (active) setArticle(result); })
-      .catch(reason => { if (active && !fallback) setError(reason instanceof ApiError ? reason.message : "Không thể tải bài viết."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [fallback, samplePreview, slug]);
 
   const copyLink = () => {
     void navigator.clipboard?.writeText(window.location.href).then(() => setCopied(true)).catch(() => setCopied(false));
   };
-
-  if (loading && !article) return <main className="shell py-12"><div className="mx-auto h-[36rem] max-w-5xl animate-pulse rounded-2xl bg-slate-100" /></main>;
-  if (error || !article) return <main className="shell py-12"><div className="mx-auto max-w-3xl rounded-xl border border-rose-100 bg-white p-10 text-center text-rose-700" role="alert">{error ?? "Không tìm thấy bài viết."}<Link className="mt-5 inline-flex font-bold text-blue-700" href="/news">Quay lại Tin tức</Link></div></main>;
 
   const related = samplePreview ? sampleNewsArticles.filter(item => item.slug !== article.slug).slice(0, 3) : [];
   const articleIndex = samplePreview ? sampleNewsArticles.findIndex(item => item.slug === article.slug) : -1;

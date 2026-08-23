@@ -19,5 +19,5 @@ test("admin news UI lets an editor select the featured article", () => {
 
   assert.match(adminSource, /handleToggleFeatured/);
   assert.match(adminSource, /Chọn làm bài nổi bật/);
-  assert.match(publicSource, /articles\.find\(article => article\.isFeatured\)/);
+  assert.match(publicSource, /articles\.items\.find\(article => article\.isFeatured\)/);
 });

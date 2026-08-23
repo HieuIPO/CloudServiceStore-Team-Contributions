@@ -20,15 +20,50 @@ public sealed class NewsApiTests(CloudServiceStoreApiFactory factory)
         using var publicList = await factory.CreateClient().GetAsync(
             $"/api/v1/news-articles?page=1&pageSize=1&categoryId={categoryId}");
         using var listJson = JsonDocument.Parse(await publicList.Content.ReadAsStreamAsync());
+        using var searchedList = await factory.CreateClient().GetAsync(
+            $"/api/v1/news-articles?page=1&pageSize=10&categoryId={categoryId}&search=First");
+        using var searchedJson = JsonDocument.Parse(await searchedList.Content.ReadAsStreamAsync());
         using var publicDetail = await factory.CreateClient().GetAsync($"/api/v1/news-articles/{firstSlug}");
         var detailJson = await publicDetail.Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(HttpStatusCode.OK, publicList.StatusCode);
         Assert.Equal(1, listJson.RootElement.GetProperty("items").GetArrayLength());
         Assert.Equal(2, listJson.RootElement.GetProperty("totalCount").GetInt32());
+        Assert.Equal(HttpStatusCode.OK, searchedList.StatusCode);
+        Assert.Equal(1, searchedJson.RootElement.GetProperty("totalCount").GetInt32());
+        Assert.Equal(firstSlug, searchedJson.RootElement.GetProperty("items")[0].GetProperty("slug").GetString());
         Assert.Equal(HttpStatusCode.OK, publicDetail.StatusCode);
         Assert.Equal(firstSlug, detailJson.GetProperty("slug").GetString());
         Assert.Contains("# Article content", detailJson.GetProperty("markdownContent").GetString());
+    }
+
+    [Fact]
+    public async Task Public_news_hides_draft_and_future_published_articles()
+    {
+        using var admin = CreateAuthenticatedClient("Admin");
+        var categoryId = await CreateCategoryAsync(admin, $"Visibility News {Guid.NewGuid():N}", $"visibility-news-{Guid.NewGuid():N}");
+        var draftSlug = $"draft-news-{Guid.NewGuid():N}";
+        var futureSlug = $"future-news-{Guid.NewGuid():N}";
+
+        await CreateArticleAsync(admin, categoryId, "Draft news article", draftSlug);
+        var futureId = await CreateArticleAsync(admin, categoryId, "Future news article", futureSlug);
+        using var publishFuture = await admin.PatchAsJsonAsync(
+            $"/api/v1/news-articles/{futureId}/publish",
+            new { publishedAt = DateTimeOffset.UtcNow.AddHours(1) });
+        using var draftDetail = await factory.CreateClient().GetAsync($"/api/v1/news-articles/{draftSlug}");
+        using var futureDetail = await factory.CreateClient().GetAsync($"/api/v1/news-articles/{futureSlug}");
+        using var publicList = await factory.CreateClient().GetAsync($"/api/v1/news-articles?page=1&pageSize=20&categoryId={categoryId}");
+        using var listJson = JsonDocument.Parse(await publicList.Content.ReadAsStreamAsync());
+
+        Assert.Equal(HttpStatusCode.OK, publishFuture.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, draftDetail.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, futureDetail.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, publicList.StatusCode);
+        Assert.DoesNotContain(listJson.RootElement.GetProperty("items").EnumerateArray(), item =>
+        {
+            var slug = item.GetProperty("slug").GetString();
+            return slug == draftSlug || slug == futureSlug;
+        });
     }
 
     [Fact]
@@ -117,6 +152,15 @@ public sealed class NewsApiTests(CloudServiceStoreApiFactory factory)
 
     private static async Task CreateAndPublishArticleAsync(HttpClient admin, Guid categoryId, string title, string slug)
     {
+        var articleId = await CreateArticleAsync(admin, categoryId, title, slug);
+        using var publish = await admin.PatchAsJsonAsync(
+            $"/api/v1/news-articles/{articleId}/publish",
+            new { publishedAt = DateTimeOffset.UtcNow });
+        Assert.Equal(HttpStatusCode.OK, publish.StatusCode);
+    }
+
+    private static async Task<Guid> CreateArticleAsync(HttpClient admin, Guid categoryId, string title, string slug)
+    {
         using var create = await admin.PostAsJsonAsync("/api/v1/news-articles", new
         {
             categoryId,
@@ -128,10 +172,6 @@ public sealed class NewsApiTests(CloudServiceStoreApiFactory factory)
         });
         var created = await create.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
-
-        using var publish = await admin.PatchAsJsonAsync(
-            $"/api/v1/news-articles/{created.GetProperty("id").GetGuid()}/publish",
-            new { publishedAt = DateTimeOffset.UtcNow });
-        Assert.Equal(HttpStatusCode.OK, publish.StatusCode);
+        return created.GetProperty("id").GetGuid();
     }
 }

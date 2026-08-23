@@ -3,36 +3,37 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-const source = fs.readFileSync(
-  path.resolve(process.cwd(), "src/components/news-public.tsx"),
-  "utf8"
-);
+const read = relative => fs.readFileSync(path.resolve(process.cwd(), relative), "utf8");
+const server = read("src/lib/news-server.ts");
+const route = read("src/app/news/page.tsx");
+const view = read("src/components/news-public.tsx");
 
-test("public news search normalizes Vietnamese Unicode before matching", () => {
-  const decomposedTitle = "Va\u0306n kha\u0301n Tha\u0302\u0300n Ta\u0300i";
-  const normalizedKeyword = "văn"
-    .normalize("NFC")
-    .toLocaleLowerCase("vi")
-    .replace(/[ăâ]/g, "a")
-    .replace(/ê/g, "e")
-    .replace(/[ôơ]/g, "o")
-    .replace(/ư/g, "u")
-    .replace(/đ/g, "d")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  const normalizedTitle = decomposedTitle
-    .normalize("NFC")
-    .toLocaleLowerCase("vi")
-    .replace(/[ăâ]/g, "a")
-    .replace(/ê/g, "e")
-    .replace(/[ôơ]/g, "o")
-    .replace(/ư/g, "u")
-    .replace(/đ/g, "d")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+test("public News parses route query and sends search/category/page to the server contract", () => {
+  assert.match(server, /export const NEWS_PAGE_SIZE = 10/);
+  assert.match(server, /getPublicNewsQuery/);
+  assert.match(server, /articleQuery\.set\("search", query\.search\)/);
+  assert.match(server, /articleQuery\.set\("categoryId", query\.categoryId\)/);
+  assert.match(server, /\/api\/v1\/news-articles\?\$\{articleQuery\}/);
+  assert.match(route, /const query = getPublicNewsQuery\(await searchParams\)/);
+  assert.match(route, /const data = await getPublicNewsPage\(query\)/);
+  const queryIndex = route.indexOf("getPublicNewsQuery(await searchParams)");
+  const pageIndex = route.indexOf("getPublicNewsPage(query)");
+  const returnIndex = route.indexOf("return <");
+  assert.ok(queryIndex >= 0 && queryIndex < pageIndex && pageIndex < returnIndex, "News list must fetch SSR data before returning its UI");
+});
 
-  assert.ok(normalizedTitle.includes(normalizedKeyword));
-  assert.match(source, /normalizeNewsSearchText/);
-  assert.match(source, /\.normalize\("NFC"\)/);
-  assert.match(source, /replace\(\/\[ăâ\]\/g, "a"\)/);
+test("public News rendering no longer loads 100 articles and filters them in the browser", () => {
+  assert.doesNotMatch(view, /"use client"/);
+  assert.doesNotMatch(view, /useEffect|useMemo|useState|newsApi\.publicArticles/);
+  assert.doesNotMatch(view, /pageSize: 100/);
+  assert.match(view, /method="get"/);
+  assert.match(view, /getNewsHref/);
+  assert.match(view, /<Pagination query=\{query\} result=\{articles\}/);
+});
+
+test("News SSR does not convert an unavailable API into an empty page or a false 404", () => {
+  assert.match(server, /class NewsApiError/);
+  assert.match(server, /await Promise\.all\(\[/);
+  assert.doesNotMatch(server, /Promise\.allSettled/);
+  assert.match(server, /if \(error instanceof NewsApiError && error\.status === 404\) return null;/);
 });
