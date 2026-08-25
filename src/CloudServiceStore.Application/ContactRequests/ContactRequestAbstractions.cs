@@ -33,6 +33,34 @@ public interface IContactRequestRepository
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
 
+public sealed record ContactRequestNotification(
+    Guid Id,
+    string FullName,
+    string Email,
+    string PhoneNumber,
+    string? CompanyName,
+    string Subject,
+    DateTimeOffset CreatedAt);
+
+public interface IContactRequestNotificationSender
+{
+    Task NotifyCreatedAsync(
+        ContactRequestNotification notification,
+        CancellationToken cancellationToken);
+}
+
+public sealed record ContactTurnstileValidationResult(
+    bool IsValid,
+    bool IsServiceAvailable);
+
+public interface IContactTurnstileValidator
+{
+    Task<ContactTurnstileValidationResult> ValidateAsync(
+        string? token,
+        string? remoteIpAddress,
+        CancellationToken cancellationToken);
+}
+
 public sealed class ContactRequestNotFoundException(string message) : Exception(message);
 
 public sealed class ContactRequestConflictException(string message) : Exception(message);

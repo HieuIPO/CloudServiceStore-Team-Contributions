@@ -1,25 +1,76 @@
 "use client";
 
-import { FormEvent, useState, type ReactNode } from "react";
+import Script from "next/script";
+import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react";
 import { ApiError, contactRequestsApi, type ContactRequestConfirmation } from "@/lib/api";
 
 const initial = { fullName: "", email: "", phoneNumber: "", companyName: "", subject: "", message: "" };
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (element: HTMLElement, options: {
+        sitekey: string;
+        action: string;
+        callback: (token: string) => void;
+        "expired-callback": () => void;
+        "error-callback": () => void;
+      }) => string;
+      reset: (widgetId?: string) => void;
+      remove: (widgetId?: string) => void;
+    };
+  }
+}
 
 export function ContactPublicClient() {
   const [form, setForm] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<ContactRequestConfirmation | null>(null);
+  const [turnstileReady, setTurnstileReady] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileContainer = useRef<HTMLDivElement | null>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!turnstileSiteKey || !turnstileReady || !turnstileContainer.current || !window.turnstile || turnstileWidgetId.current) return;
+
+    turnstileWidgetId.current = window.turnstile.render(turnstileContainer.current, {
+      sitekey: turnstileSiteKey,
+      action: "contact_submit",
+      callback: token => setTurnstileToken(token),
+      "expired-callback": () => setTurnstileToken(""),
+      "error-callback": () => setTurnstileToken("")
+    });
+
+    return () => {
+      if (turnstileWidgetId.current) window.turnstile?.remove(turnstileWidgetId.current);
+      turnstileWidgetId.current = null;
+    };
+  }, [turnstileReady, done]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError("");
+    if (turnstileSiteKey && !turnstileToken) {
+      setError("Vui lòng hoàn thành xác minh chống spam trước khi gửi.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      setDone(await contactRequestsApi.create(form));
+      setDone(await contactRequestsApi.create({
+        ...form,
+        turnstileToken: turnstileSiteKey ? turnstileToken : undefined
+      }));
       setForm(initial);
+      setTurnstileToken("");
     } catch (reason) {
       setError(reason instanceof ApiError ? reason.message : "Không thể gửi yêu cầu. Vui lòng thử lại sau.");
+      setTurnstileToken("");
+      if (turnstileWidgetId.current) window.turnstile?.reset(turnstileWidgetId.current);
     } finally {
       setLoading(false);
     }
@@ -32,7 +83,8 @@ export function ContactPublicClient() {
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-9">
-        {done ? <div className="flex min-h-[28rem] flex-col justify-center text-center" aria-live="polite"><div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-emerald-100 text-3xl text-emerald-700">✓</div><p className="mt-6 text-sm font-bold uppercase tracking-[.18em] text-emerald-700">Đã tiếp nhận</p><h2 className="mt-2 text-3xl font-black text-slate-900">Cảm ơn bạn đã liên hệ.</h2><p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-600">Mã yêu cầu của bạn là <strong className="break-all text-slate-900">{done.id}</strong>. Vui lòng lưu mã này để đối chiếu khi đội ngũ hỗ trợ liên hệ lại.</p><button className="mx-auto mt-8 rounded-xl bg-sky-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-sky-700" onClick={() => setDone(null)} type="button">Gửi yêu cầu khác</button></div> : <><p className="text-xs font-bold uppercase tracking-[.18em] text-sky-600">Form tư vấn</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">Cho chúng tôi biết nhu cầu của bạn</h2><p className="mt-3 text-sm leading-6 text-slate-600">Các trường có dấu * là bắt buộc. Thông tin cần chính xác để đội ngũ liên hệ lại.</p><form className="mt-7 grid gap-4" onSubmit={submit} aria-describedby="contact-error"><div className="grid gap-4 sm:grid-cols-2"><Field label="Họ và tên" required><input autoComplete="name" className="field" required value={form.fullName} onChange={event => setForm({ ...form, fullName: event.target.value })} /></Field><Field label="Số điện thoại" required><input autoComplete="tel" className="field" required value={form.phoneNumber} onChange={event => setForm({ ...form, phoneNumber: event.target.value })} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Email" required><input autoComplete="email" className="field" required type="email" value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} /></Field><Field label="Công ty"><input autoComplete="organization" className="field" value={form.companyName} onChange={event => setForm({ ...form, companyName: event.target.value })} /></Field></div><Field label="Chủ đề" required><input className="field" required value={form.subject} onChange={event => setForm({ ...form, subject: event.target.value })} /></Field><Field label="Nội dung cần tư vấn" required><textarea className="field min-h-32 resize-y" required rows={5} value={form.message} onChange={event => setForm({ ...form, message: event.target.value })} /></Field>{error && <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" id="contact-error" role="alert">{error}</p>}<button className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl bg-sky-600 px-6 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400" disabled={loading} type="submit">{loading ? "Đang gửi yêu cầu..." : "Gửi yêu cầu tư vấn"}</button></form></>}
+        {turnstileSiteKey && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onLoad={() => setTurnstileReady(true)} />}
+        {done ? <div className="flex min-h-[28rem] flex-col justify-center text-center" aria-live="polite"><div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-emerald-100 text-3xl text-emerald-700">✓</div><p className="mt-6 text-sm font-bold uppercase tracking-[.18em] text-emerald-700">Đã tiếp nhận</p><h2 className="mt-2 text-3xl font-black text-slate-900">Cảm ơn bạn đã liên hệ.</h2><p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-600">Mã yêu cầu của bạn là <strong className="break-all text-slate-900">{done.id}</strong>. Vui lòng lưu mã này để đối chiếu khi đội ngũ hỗ trợ liên hệ lại.</p><button className="mx-auto mt-8 rounded-xl bg-sky-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-sky-700" onClick={() => setDone(null)} type="button">Gửi yêu cầu khác</button></div> : <><p className="text-xs font-bold uppercase tracking-[.18em] text-sky-600">Form tư vấn</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">Cho chúng tôi biết nhu cầu của bạn</h2><p className="mt-3 text-sm leading-6 text-slate-600">Các trường có dấu * là bắt buộc. Thông tin cần chính xác để đội ngũ liên hệ lại.</p><form className="mt-7 grid gap-4" onSubmit={submit} aria-describedby="contact-error"><div className="grid gap-4 sm:grid-cols-2"><Field label="Họ và tên" required><input autoComplete="name" className="field" required value={form.fullName} onChange={event => setForm({ ...form, fullName: event.target.value })} /></Field><Field label="Số điện thoại" required><input autoComplete="tel" className="field" required value={form.phoneNumber} onChange={event => setForm({ ...form, phoneNumber: event.target.value })} /></Field></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Email" required><input autoComplete="email" className="field" required type="email" value={form.email} onChange={event => setForm({ ...form, email: event.target.value })} /></Field><Field label="Công ty"><input autoComplete="organization" className="field" value={form.companyName} onChange={event => setForm({ ...form, companyName: event.target.value })} /></Field></div><Field label="Chủ đề" required><input className="field" required value={form.subject} onChange={event => setForm({ ...form, subject: event.target.value })} /></Field><Field label="Nội dung cần tư vấn" required><textarea className="field min-h-32 resize-y" required rows={5} value={form.message} onChange={event => setForm({ ...form, message: event.target.value })} /></Field>{turnstileSiteKey && <div className="min-h-16" ref={turnstileContainer} aria-label="Xác minh chống spam" />}{error && <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" id="contact-error" role="alert">{error}</p>}<button className="mt-2 inline-flex min-h-12 items-center justify-center rounded-xl bg-sky-600 px-6 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400" disabled={loading || (Boolean(turnstileSiteKey) && !turnstileToken)} type="submit">{loading ? "Đang gửi yêu cầu..." : "Gửi yêu cầu tư vấn"}</button></form></>}
       </section>
     </div>
   </main>;
