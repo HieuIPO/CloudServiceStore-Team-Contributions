@@ -4,6 +4,7 @@ using CloudServiceStore.Application.ContactRequests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using CloudServiceStore.WebApi.Security;
 
 namespace CloudServiceStore.WebApi.Controllers;
@@ -11,7 +12,10 @@ namespace CloudServiceStore.WebApi.Controllers;
 [ApiController]
 [Route("api/v1/contact-requests")]
 public sealed class ContactRequestsController(
-    IContactRequestService contactRequestService) : ControllerBase
+    IContactRequestService contactRequestService,
+    IContactTurnstileValidator? turnstileValidator = null,
+    IContactRequestNotificationSender? notificationSender = null,
+    ILogger<ContactRequestsController>? logger = null) : ControllerBase
 {
     [AllowAnonymous]
     [HttpPost]
@@ -26,11 +30,59 @@ public sealed class ContactRequestsController(
         CancellationToken cancellationToken) =>
         Execute(async () =>
         {
+            if (turnstileValidator is not null)
+            {
+                var verification = await turnstileValidator.ValidateAsync(
+                    request.TurnstileToken,
+                    GetIpAddress(),
+                    cancellationToken);
+
+                if (!verification.IsServiceAvailable)
+                {
+                    return Problem(
+                        statusCode: StatusCodes.Status503ServiceUnavailable,
+                        title: "Verification service unavailable",
+                        detail: "Unable to verify the anti-spam challenge. Please try again later.");
+                }
+
+                if (!verification.IsValid)
+                {
+                    return Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Verification failed",
+                        detail: "Please complete the anti-spam challenge and try again.");
+                }
+            }
+
             var result = await contactRequestService.CreateAsync(
                 request,
                 GetOptionalUserId(),
                 GetIpAddress(),
                 cancellationToken);
+
+            if (notificationSender is not null)
+            {
+                try
+                {
+                    await notificationSender.NotifyCreatedAsync(
+                        new ContactRequestNotification(
+                            result.Id,
+                            request.FullName.Trim(),
+                            request.Email.Trim().ToLowerInvariant(),
+                            request.PhoneNumber.Trim(),
+                            string.IsNullOrWhiteSpace(request.CompanyName) ? null : request.CompanyName.Trim(),
+                            request.Subject.Trim(),
+                            result.CreatedAt),
+                        cancellationToken);
+                }
+                catch (Exception exception)
+                {
+                    logger?.LogError(
+                        exception,
+                        "Contact notification failed after request {ContactRequestId} was created.",
+                        result.Id);
+                }
+            }
 
             return StatusCode(StatusCodes.Status201Created, result);
         });

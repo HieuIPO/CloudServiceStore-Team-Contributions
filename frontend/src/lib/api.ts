@@ -389,7 +389,7 @@ const contactRequestQuery = (params: { page?: number; pageSize?: number; search?
 };
 
 export const contactRequestsApi = {
-  create: (body: { fullName: string; email: string; phoneNumber: string; companyName?: string; subject: string; message: string }) =>
+  create: (body: { fullName: string; email: string; phoneNumber: string; companyName?: string; subject: string; message: string; turnstileToken?: string }) =>
     apiFetch<ContactRequestConfirmation>("/api/v1/contact-requests", { method: "POST", body: JSON.stringify(body) }),
   all: (params: { page?: number; pageSize?: number; search?: string; status?: ContactRequestStatus; createdFrom?: string; createdTo?: string } = {}, signal?: AbortSignal) =>
     apiFetch<PagedResult<ContactRequestListItem>>(`/api/v1/contact-requests?${contactRequestQuery(params)}`, { signal }),
