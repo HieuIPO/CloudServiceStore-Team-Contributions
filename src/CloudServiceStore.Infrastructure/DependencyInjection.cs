@@ -10,6 +10,7 @@ using CloudServiceStore.Application.ContactRequests;
 using CloudServiceStore.Application.Reporting;
 using CloudServiceStore.Application.EditorWorkspace;
 using CloudServiceStore.Infrastructure.Authentication;
+using CloudServiceStore.Infrastructure.ContactRequests;
 using CloudServiceStore.Infrastructure.NewsData;
 using CloudServiceStore.Infrastructure.Persistence;
 using CloudServiceStore.Infrastructure.Reporting;
@@ -58,6 +59,14 @@ public static class DependencyInjection
         services.AddScoped<IAffiliateService, AffiliateService>();
         services.AddScoped<IContactRequestRepository, ContactRequestRepository>();
         services.AddScoped<IContactRequestService, ContactRequestService>();
+        services.Configure<ContactEmailOptions>(configuration.GetSection(ContactEmailOptions.SectionName));
+        services.AddScoped<IContactRequestNotificationSender, SmtpContactRequestNotificationSender>();
+        services.Configure<ContactTurnstileOptions>(configuration.GetSection(ContactTurnstileOptions.SectionName));
+        services.AddHttpClient<IContactTurnstileValidator, ContactTurnstileValidator>((_, client) =>
+        {
+            client.BaseAddress = new Uri("https://challenges.cloudflare.com/", UriKind.Absolute);
+            client.Timeout = TimeSpan.FromSeconds(8);
+        });
         services.AddScoped<IReportingRepository, ReportingRepository>();
         services.AddScoped<IReportingService, ReportingService>();
         services.AddScoped<IEditorWorkspaceRepository, EditorWorkspaceRepository>();
