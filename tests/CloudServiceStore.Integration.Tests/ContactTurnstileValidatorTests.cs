@@ -68,8 +68,12 @@ public sealed class ContactTurnstileValidatorTests
         Assert.True(result.IsServiceAvailable);
     }
 
-    [Fact]
-    public async Task ValidateAsync_returns_unavailable_when_expected_action_or_hostname_is_missing()
+    [Theory]
+    [InlineData("", "contact.example.test")]
+    [InlineData("contact_submit", "")]
+    public async Task ValidateAsync_returns_unavailable_when_required_expected_value_is_missing(
+        string expectedAction,
+        string expectedHostname)
     {
         var handler = new StubHandler(HttpStatusCode.OK, "{}");
         using var client = new HttpClient(handler)
@@ -82,8 +86,8 @@ public sealed class ContactTurnstileValidatorTests
             {
                 Enabled = true,
                 SecretKey = "test-secret",
-                ExpectedAction = "",
-                ExpectedHostname = null
+                ExpectedAction = expectedAction,
+                ExpectedHostname = expectedHostname
             }));
 
         var result = await validator.ValidateAsync("test-token", null, CancellationToken.None);
