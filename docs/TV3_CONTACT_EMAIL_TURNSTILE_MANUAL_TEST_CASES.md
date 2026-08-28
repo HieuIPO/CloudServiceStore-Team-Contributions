@@ -4,6 +4,8 @@
 
 **Môi trường:** Staging có HTTPS, backend và frontend được deploy từ branch `feature/contact-email-turnstile-hieu-dev-clean` tại exact HEAD của PR hiện tại. Không chạy test này bằng secret production nếu không có phê duyệt của nhóm.
 
+**Ghi nhận phiên bản:** Mỗi lần test phải ghi exact commit SHA của bản đang deploy và link CI tương ứng của chính commit đó; không dùng commit hoặc CI của PR/branch khác làm bằng chứng cho kết quả test.
+
 > **Nguyên tắc:** Site key Turnstile có thể xuất hiện ở browser. SMTP App Password và Turnstile secret chỉ ở Azure Secrets/environment runtime; không dán chúng vào ticket, screenshot, DevTools export, log hoặc tài liệu test.[1] [2]
 
 ## 1. Chuẩn bị trước khi test
