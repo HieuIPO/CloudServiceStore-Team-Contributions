@@ -68,12 +68,8 @@ public sealed class ContactTurnstileValidatorTests
         Assert.True(result.IsServiceAvailable);
     }
 
-    [Theory]
-    [InlineData("", "contact.example.test")]
-    [InlineData("contact_submit", "")]
-    public async Task ValidateAsync_returns_unavailable_when_required_expected_value_is_missing(
-        string expectedAction,
-        string expectedHostname)
+    [Fact]
+    public async Task ValidateAsync_returns_unavailable_when_expected_action_is_missing()
     {
         var handler = new StubHandler(HttpStatusCode.OK, "{}");
         using var client = new HttpClient(handler)
@@ -86,8 +82,33 @@ public sealed class ContactTurnstileValidatorTests
             {
                 Enabled = true,
                 SecretKey = "test-secret",
-                ExpectedAction = expectedAction,
-                ExpectedHostname = expectedHostname
+                ExpectedAction = "",
+                ExpectedHostname = "contact.example.test"
+            }));
+
+        var result = await validator.ValidateAsync("test-token", null, CancellationToken.None);
+
+        Assert.False(result.IsValid);
+        Assert.False(result.IsServiceAvailable);
+        Assert.Null(handler.Request);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_returns_unavailable_when_expected_hostname_is_missing()
+    {
+        var handler = new StubHandler(HttpStatusCode.OK, "{}");
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://challenges.cloudflare.com/")
+        };
+        var validator = new ContactTurnstileValidator(
+            client,
+            Options.Create(new ContactTurnstileOptions
+            {
+                Enabled = true,
+                SecretKey = "test-secret",
+                ExpectedAction = "contact_submit",
+                ExpectedHostname = ""
             }));
 
         var result = await validator.ValidateAsync("test-token", null, CancellationToken.None);
