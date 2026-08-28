@@ -10,7 +10,7 @@ Cloudflare Turnstile chỉ áp dụng cho public `POST /api/v1/contact-requests`
 
 ## 2. Cấu hình an toàn
 
-Mặc định local trong `appsettings.json` để hai feature ở trạng thái tắt. `.env.example` chỉ chứa tên biến và giá trị trống; không điền mật khẩu, site secret hoặc App Password vào Git.
+Mặc định local trong `appsettings.json` để hai feature ở trạng thái tắt. `.env.example` có các biến mẫu; credential SMTP và Turnstile secret để trống. Không điền mật khẩu SMTP, site secret hoặc App Password vào Git.
 
 | Environment variable | Nơi dùng | Giá trị triển khai |
 |---|---|---|
@@ -28,9 +28,11 @@ Mặc định local trong `appsettings.json` để hai feature ở trạng thái
 | `CONTACT_TURNSTILE__SECRET_KEY` | API | Turnstile secret key — backend only |
 | `CONTACT_TURNSTILE__EXPECTED_ACTION` | API | `contact_submit` |
 | `CONTACT_TURNSTILE__EXPECTED_HOSTNAME` | API | Hostname đã đăng ký cho widget, ví dụ `example.com` |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Frontend build/runtime | Turnstile **site key** công khai, không phải secret |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Frontend build-time | Turnstile **site key** công khai, không phải secret |
 
 `.NET` map environment name dùng `__` thành section path. Ví dụ `CONTACT_EMAIL__PASSWORD` tương ứng `ContactEmail:Password` và `CONTACT_TURNSTILE__SECRET_KEY` tương ứng `ContactTurnstile:SecretKey`.
+
+Docker Compose truyền các biến `ContactEmail__*` và `ContactTurnstile__*` vào API; mặc định cả hai feature đều tắt nên local không cần credential. Frontend phải nhận `NEXT_PUBLIC_TURNSTILE_SITE_KEY` trước bước build production; đặt biến sau khi build sẽ không làm widget xuất hiện trong bundle đã tạo.
 
 ## 3. Gmail SMTP
 
@@ -44,7 +46,7 @@ Nếu SMTP không gửi được do credential, quota hoặc mạng, API vẫn t
 
 Tạo Turnstile widget trên Cloudflare Dashboard, đăng ký đúng hostname staging/production và lưu hai key tách biệt:
 
-1. Site key đặt vào `NEXT_PUBLIC_TURNSTILE_SITE_KEY` để browser render widget.
+1. Site key đặt vào `NEXT_PUBLIC_TURNSTILE_SITE_KEY` trước khi build frontend để browser render widget.
 2. Secret key đặt vào Azure Secret rồi map vào `CONTACT_TURNSTILE__SECRET_KEY` cho API.
 
 Widget render action `contact_submit`. Backend gửi `secret`, `response`, `remoteip` và `idempotency_key` tới `POST https://challenges.cloudflare.com/turnstile/v0/siteverify`, kiểm tra `success`, action và hostname trước khi gọi Contact service.[1] Khi feature bật mà Secret, ExpectedAction hoặc ExpectedHostname bị thiếu, validator fail-closed và trả trạng thái dịch vụ không khả dụng. JSON malformed/empty hoặc response không đọc được cũng được coi là verify unavailable và controller trả `503`; action/hostname mismatch trả `400` và không tạo Contact.
