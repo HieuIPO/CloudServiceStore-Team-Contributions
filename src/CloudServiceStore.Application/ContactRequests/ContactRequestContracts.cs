@@ -10,7 +10,8 @@ public sealed record CreateContactRequestRequest(
     [param: Required, RegularExpression(@"^\+?(?:[\d][\s().-]*){8,15}$")] string PhoneNumber,
     [param: StringLength(160)] string? CompanyName,
     [param: Required, StringLength(180, MinimumLength = 3)] string Subject,
-    [param: Required, StringLength(4000, MinimumLength = 10)] string Message);
+    [param: Required, StringLength(4000, MinimumLength = 10)] string Message,
+    [param: StringLength(2048)] string? TurnstileToken = null);
 
 public sealed record ContactRequestQuery(
     [param: Range(1, int.MaxValue)] int Page = 1,

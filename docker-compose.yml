@@ -38,6 +38,20 @@ services:
       Jwt__Issuer: CloudServiceStore.Api
       Jwt__Audience: CloudServiceStore.Frontend
       Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      ContactEmail__Enabled: ${CONTACT_EMAIL__ENABLED:-false}
+      ContactEmail__Host: ${CONTACT_EMAIL__HOST:-smtp.gmail.com}
+      ContactEmail__Port: ${CONTACT_EMAIL__PORT:-587}
+      ContactEmail__UseSsl: ${CONTACT_EMAIL__USE_SSL:-true}
+      ContactEmail__Username: ${CONTACT_EMAIL__USERNAME:-}
+      ContactEmail__Password: ${CONTACT_EMAIL__PASSWORD:-}
+      ContactEmail__FromAddress: ${CONTACT_EMAIL__FROM_ADDRESS:-}
+      ContactEmail__FromDisplayName: ${CONTACT_EMAIL__FROM_DISPLAY_NAME:-CloudServiceStore}
+      ContactEmail__AdminRecipientAddress: ${CONTACT_EMAIL__ADMIN_RECIPIENT_ADDRESS:-}
+      ContactEmail__TimeoutSeconds: ${CONTACT_EMAIL__TIMEOUT_SECONDS:-10}
+      ContactTurnstile__Enabled: ${CONTACT_TURNSTILE__ENABLED:-false}
+      ContactTurnstile__SecretKey: ${CONTACT_TURNSTILE__SECRET_KEY:-}
+      ContactTurnstile__ExpectedAction: ${CONTACT_TURNSTILE__EXPECTED_ACTION:-contact_submit}
+      ContactTurnstile__ExpectedHostname: ${CONTACT_TURNSTILE__EXPECTED_HOSTNAME:-}
     ports:
       - "8080:8080"
     depends_on:

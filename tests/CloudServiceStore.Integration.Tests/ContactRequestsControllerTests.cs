@@ -1,10 +1,14 @@
+using System.Net;
 using System.Security.Claims;
+using System.Text;
 using CloudServiceStore.Application.Common;
 using CloudServiceStore.Application.ContactRequests;
 using CloudServiceStore.Domain.Enums;
+using CloudServiceStore.Infrastructure.ContactRequests;
 using CloudServiceStore.WebApi.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace CloudServiceStore.Integration.Tests;
@@ -69,6 +73,108 @@ public sealed class ContactRequestsControllerTests
         var problem = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, problem.StatusCode);
         Assert.Equal("Contact request queue is busy", Assert.IsType<ProblemDetails>(problem.Value).Title);
+    }
+
+    [Fact]
+    public async Task Create_returns_400_and_does_not_persist_when_turnstile_validation_fails()
+    {
+        var service = new Mock<IContactRequestService>();
+        var turnstile = new Mock<IContactTurnstileValidator>();
+        turnstile.Setup(x => x.ValidateAsync("invalid-token", "127.0.0.1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactTurnstileValidationResult(false, true));
+        var controller = CreateController(service, null, "127.0.0.1", turnstile.Object);
+
+        var result = await controller.Create(ValidRequest() with { TurnstileToken = "invalid-token" }, CancellationToken.None);
+
+        var problem = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, problem.StatusCode);
+        Assert.Equal("Verification failed", Assert.IsType<ProblemDetails>(problem.Value).Title);
+        service.Verify(x => x.CreateAsync(
+            It.IsAny<CreateContactRequestRequest>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_returns_503_when_turnstile_service_is_unavailable()
+    {
+        var service = new Mock<IContactRequestService>();
+        var turnstile = new Mock<IContactTurnstileValidator>();
+        turnstile.Setup(x => x.ValidateAsync("token", "127.0.0.1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactTurnstileValidationResult(false, false));
+        var controller = CreateController(service, null, "127.0.0.1", turnstile.Object);
+
+        var result = await controller.Create(ValidRequest() with { TurnstileToken = "token" }, CancellationToken.None);
+
+        var problem = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, problem.StatusCode);
+        Assert.Equal("Verification service unavailable", Assert.IsType<ProblemDetails>(problem.Value).Title);
+        service.Verify(x => x.CreateAsync(
+            It.IsAny<CreateContactRequestRequest>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_returns_503_and_does_not_persist_when_siteverify_json_is_malformed()
+    {
+        var service = new Mock<IContactRequestService>();
+        using var client = new HttpClient(new MalformedSiteverifyHandler())
+        {
+            BaseAddress = new Uri("https://challenges.cloudflare.com/")
+        };
+        var validator = new ContactTurnstileValidator(
+            client,
+            Options.Create(new ContactTurnstileOptions
+            {
+                Enabled = true,
+                SecretKey = "test-secret",
+                ExpectedAction = "contact_submit",
+                ExpectedHostname = "contact.example.test"
+            }));
+        var controller = CreateController(service, null, "127.0.0.1", validator);
+
+        var result = await controller.Create(
+            ValidRequest() with { TurnstileToken = "token" },
+            CancellationToken.None);
+
+        var problem = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, problem.StatusCode);
+        Assert.Equal("Verification service unavailable", Assert.IsType<ProblemDetails>(problem.Value).Title);
+        service.Verify(x => x.CreateAsync(
+            It.IsAny<CreateContactRequestRequest>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_returns_201_when_best_effort_notification_throws()
+    {
+        var service = new Mock<IContactRequestService>();
+        var notification = new Mock<IContactRequestNotificationSender>();
+        var id = Guid.NewGuid();
+        service.Setup(x => x.CreateAsync(
+                It.IsAny<CreateContactRequestRequest>(),
+                null,
+                "127.0.0.1",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ContactRequestConfirmationDto(id, ContactRequestStatus.Pending, DateTimeOffset.UtcNow));
+        notification.Setup(x => x.NotifyCreatedAsync(
+                It.Is<ContactRequestNotification>(item => item.Id == id),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("SMTP unavailable"));
+        var controller = CreateController(service, null, "127.0.0.1", notificationSender: notification.Object);
+
+        var result = await controller.Create(ValidRequest(), CancellationToken.None);
+
+        var created = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status201Created, created.StatusCode);
+        notification.Verify(x => x.NotifyCreatedAsync(
+            It.Is<ContactRequestNotification>(item => item.Id == id),
+            CancellationToken.None), Times.Once);
     }
 
     [Fact]
@@ -239,7 +345,9 @@ public sealed class ContactRequestsControllerTests
     private static ContactRequestsController CreateController(
         Mock<IContactRequestService> service,
         Guid? userId = null,
-        string? ipAddress = null)
+        string? ipAddress = null,
+        IContactTurnstileValidator? turnstileValidator = null,
+        IContactRequestNotificationSender? notificationSender = null)
     {
         var context = new DefaultHttpContext();
         context.Connection.RemoteIpAddress = ipAddress is null
@@ -253,7 +361,7 @@ public sealed class ContactRequestsControllerTests
                 "Test"));
         }
 
-        return new ContactRequestsController(service.Object)
+        return new ContactRequestsController(service.Object, turnstileValidator, notificationSender)
         {
             ControllerContext = new ControllerContext { HttpContext = context }
         };
@@ -262,6 +370,17 @@ public sealed class ContactRequestsControllerTests
     private static CreateContactRequestRequest ValidRequest() =>
         new("Nguyen Phuoc Duy", "duy@example.com", "0901234567", null,
             "Tư vấn cloud", "Tôi cần tư vấn dịch vụ cloud cho doanh nghiệp.");
+
+    private sealed class MalformedSiteverifyHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("not-json", Encoding.UTF8, "application/json")
+            });
+    }
 
     private static ContactRequestDetailDto Detail(Guid id, ContactRequestStatus status) =>
         new(id, "Nguyen Phuoc Duy", "duy@example.com", "0901234567", null,
