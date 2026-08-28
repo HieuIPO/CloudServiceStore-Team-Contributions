@@ -2,7 +2,7 @@
 
 **Phạm vi:** Email Notification Gmail SMTP chỉ thông báo cho Admin khi Contact mới được tạo, và Cloudflare Turnstile chỉ bảo vệ public `POST /api/v1/contact-requests`.
 
-**Môi trường:** Staging có HTTPS, backend và frontend được deploy từ PR #8 hoặc branch review tương đương. Không chạy test này bằng secret production nếu không có phê duyệt của nhóm.
+**Môi trường:** Staging có HTTPS, backend và frontend được deploy từ branch `feature/contact-email-turnstile-hieu-dev-clean` tại exact HEAD của PR hiện tại. Không chạy test này bằng secret production nếu không có phê duyệt của nhóm.
 
 > **Nguyên tắc:** Site key Turnstile có thể xuất hiện ở browser. SMTP App Password và Turnstile secret chỉ ở Azure Secrets/environment runtime; không dán chúng vào ticket, screenshot, DevTools export, log hoặc tài liệu test.[1] [2]
 
