@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using CloudServiceStore.Application.ContactRequests;
 using Microsoft.Extensions.Options;
@@ -28,8 +29,12 @@ public sealed class ContactTurnstileValidator(
         if (!settings.Enabled)
             return new(true, true);
 
-        if (string.IsNullOrWhiteSpace(settings.SecretKey))
+        if (string.IsNullOrWhiteSpace(settings.SecretKey)
+            || string.IsNullOrWhiteSpace(settings.ExpectedAction)
+            || string.IsNullOrWhiteSpace(settings.ExpectedHostname))
+        {
             return new(false, false);
+        }
 
         if (string.IsNullOrWhiteSpace(token) || token.Length > 2048)
             return new(false, true);
@@ -57,16 +62,25 @@ public sealed class ContactTurnstileValidator(
                 return new(false, false);
 
             var payload = await response.Content.ReadFromJsonAsync<TurnstileSiteverifyResponse>(
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken)
+                ?? throw new JsonException("Turnstile Siteverify returned an empty JSON payload.");
 
-            var matchesAction = string.IsNullOrWhiteSpace(settings.ExpectedAction)
-                || string.Equals(payload?.Action, settings.ExpectedAction, StringComparison.Ordinal);
-            var matchesHostname = string.IsNullOrWhiteSpace(settings.ExpectedHostname)
-                || string.Equals(payload?.Hostname, settings.ExpectedHostname, StringComparison.OrdinalIgnoreCase);
+            var matchesAction = string.Equals(
+                payload.Action,
+                settings.ExpectedAction,
+                StringComparison.Ordinal);
+            var matchesHostname = string.Equals(
+                payload.Hostname,
+                settings.ExpectedHostname,
+                StringComparison.OrdinalIgnoreCase);
 
-            return new(payload?.Success == true && matchesAction && matchesHostname, true);
+            return new(payload.Success && matchesAction && matchesHostname, true);
         }
         catch (HttpRequestException)
+        {
+            return new(false, false);
+        }
+        catch (JsonException)
         {
             return new(false, false);
         }

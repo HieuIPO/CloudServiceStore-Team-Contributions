@@ -23,6 +23,7 @@ Mặc định local trong `appsettings.json` để hai feature ở trạng thái
 | `CONTACT_EMAIL__FROM_ADDRESS` | API | Địa chỉ From đã được cấp quyền gửi |
 | `CONTACT_EMAIL__FROM_DISPLAY_NAME` | API | `CloudServiceStore` hoặc tên nhóm chốt |
 | `CONTACT_EMAIL__ADMIN_RECIPIENT_ADDRESS` | API | Hộp thư Admin nhận thông báo Contact mới |
+| `CONTACT_EMAIL__TIMEOUT_SECONDS` | API | Timeout riêng cho SMTP, mặc định `10`, giới hạn `1–300` |
 | `CONTACT_TURNSTILE__ENABLED` | API | `true` sau khi cấu hình widget production/staging |
 | `CONTACT_TURNSTILE__SECRET_KEY` | API | Turnstile secret key — backend only |
 | `CONTACT_TURNSTILE__EXPECTED_ACTION` | API | `contact_submit` |
@@ -37,7 +38,7 @@ Gmail SMTP dùng host `smtp.gmail.com`, TLS và port `587`; Google ghi nhận SM
 
 Tạo secret backing trong Azure, ví dụ `css-contact-email-password`, rồi map giá trị secret đó vào biến runtime `CONTACT_EMAIL__PASSWORD`. Tương tự, map username, from address và Admin recipient qua Azure Secrets/App Service Configuration/Container App secret reference tùy môi trường deploy. Không dán giá trị thật vào PR description, workflow log, `appsettings*.json` hoặc `.env.example`.
 
-Nếu SMTP không gửi được do credential, quota hoặc mạng, API vẫn trả `201` sau khi Contact đã lưu. Log chỉ chứa exception và Contact request id, không ghi email/message của khách.
+Nếu SMTP không gửi được do credential, quota hoặc mạng, API vẫn trả `201` sau khi Contact đã lưu. Sender áp dụng timeout riêng theo `CONTACT_EMAIL__TIMEOUT_SECONDS`; timeout hoặc lỗi gửi chỉ được log kèm Contact request id, không ghi email/message của khách.
 
 ## 4. Cloudflare Turnstile
 
@@ -46,13 +47,13 @@ Tạo Turnstile widget trên Cloudflare Dashboard, đăng ký đúng hostname st
 1. Site key đặt vào `NEXT_PUBLIC_TURNSTILE_SITE_KEY` để browser render widget.
 2. Secret key đặt vào Azure Secret rồi map vào `CONTACT_TURNSTILE__SECRET_KEY` cho API.
 
-Widget render action `contact_submit`. Backend gửi `secret`, `response`, `remoteip` và `idempotency_key` tới `POST https://challenges.cloudflare.com/turnstile/v0/siteverify`, kiểm tra `success`, action và hostname trước khi gọi Contact service.[1]
+Widget render action `contact_submit`. Backend gửi `secret`, `response`, `remoteip` và `idempotency_key` tới `POST https://challenges.cloudflare.com/turnstile/v0/siteverify`, kiểm tra `success`, action và hostname trước khi gọi Contact service.[1] Khi feature bật mà Secret, ExpectedAction hoặc ExpectedHostname bị thiếu, validator fail-closed và trả trạng thái dịch vụ không khả dụng. JSON malformed/empty hoặc response không đọc được cũng được coi là verify unavailable và controller trả `503`; action/hostname mismatch trả `400` và không tạo Contact.
 
 | Kết quả validation | Response Contact POST | Có lưu Contact không? |
 |---|---:|---|
 | Token hợp lệ | `201 Created` | Có |
 | Token thiếu/sai/hết hạn | `400 Verification failed` | Không |
-| Siteverify không khả dụng hoặc secret backend thiếu khi feature bật | `503 Verification service unavailable` | Không |
+| Siteverify không khả dụng, JSON bất thường hoặc cấu hình bắt buộc thiếu khi feature bật | `503 Verification service unavailable` | Không |
 
 Token có thời hạn năm phút và chỉ dùng một lần; sau một lần submit thành công hoặc lỗi, UI sẽ yêu cầu token mới thay vì tái sử dụng token cũ.[1]
 

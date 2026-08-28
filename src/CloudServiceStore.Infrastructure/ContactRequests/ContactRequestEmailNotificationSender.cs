@@ -19,6 +19,7 @@ public sealed class ContactEmailOptions
     public string FromAddress { get; init; } = string.Empty;
     public string FromDisplayName { get; init; } = "CloudServiceStore";
     public string AdminRecipientAddress { get; init; } = string.Empty;
+    public int TimeoutSeconds { get; init; } = 10;
 }
 
 public sealed class SmtpContactRequestNotificationSender(
@@ -49,10 +50,13 @@ public sealed class SmtpContactRequestNotificationSender(
         {
             EnableSsl = settings.UseSsl,
             UseDefaultCredentials = false,
-            Credentials = new NetworkCredential(settings.Username, settings.Password)
+            Credentials = new NetworkCredential(settings.Username, settings.Password),
+            Timeout = checked(settings.TimeoutSeconds * 1000)
         };
 
-        await smtp.SendMailAsync(message, cancellationToken);
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(settings.TimeoutSeconds));
+        await smtp.SendMailAsync(message, timeoutCts.Token);
     }
 
     private static void Validate(ContactEmailOptions settings)
@@ -62,7 +66,8 @@ public sealed class SmtpContactRequestNotificationSender(
             || string.IsNullOrWhiteSpace(settings.Username)
             || string.IsNullOrWhiteSpace(settings.Password)
             || string.IsNullOrWhiteSpace(settings.FromAddress)
-            || string.IsNullOrWhiteSpace(settings.AdminRecipientAddress))
+            || string.IsNullOrWhiteSpace(settings.AdminRecipientAddress)
+            || settings.TimeoutSeconds is < 1 or > 300)
         {
             throw new InvalidOperationException(
                 "ContactEmail is enabled but the SMTP configuration is incomplete.");

@@ -38,6 +38,85 @@ public sealed class ContactTurnstileValidatorTests
         Assert.Contains("remoteip=203.0.113.7", handler.Body, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("wrong_action", "contact.example.test")]
+    [InlineData("contact_submit", "wrong.example.test")]
+    public async Task ValidateAsync_rejects_action_or_hostname_mismatch(
+        string action,
+        string hostname)
+    {
+        var handler = new StubHandler(
+            HttpStatusCode.OK,
+            $"{{\"success\":true,\"hostname\":\"{hostname}\",\"action\":\"{action}\"}}");
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://challenges.cloudflare.com/")
+        };
+        var validator = new ContactTurnstileValidator(
+            client,
+            Options.Create(new ContactTurnstileOptions
+            {
+                Enabled = true,
+                SecretKey = "test-secret",
+                ExpectedAction = "contact_submit",
+                ExpectedHostname = "contact.example.test"
+            }));
+
+        var result = await validator.ValidateAsync("test-token", null, CancellationToken.None);
+
+        Assert.False(result.IsValid);
+        Assert.True(result.IsServiceAvailable);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_returns_unavailable_when_expected_action_or_hostname_is_missing()
+    {
+        var handler = new StubHandler(HttpStatusCode.OK, "{}");
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://challenges.cloudflare.com/")
+        };
+        var validator = new ContactTurnstileValidator(
+            client,
+            Options.Create(new ContactTurnstileOptions
+            {
+                Enabled = true,
+                SecretKey = "test-secret",
+                ExpectedAction = "",
+                ExpectedHostname = null
+            }));
+
+        var result = await validator.ValidateAsync("test-token", null, CancellationToken.None);
+
+        Assert.False(result.IsValid);
+        Assert.False(result.IsServiceAvailable);
+        Assert.Null(handler.Request);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_returns_unavailable_when_siteverify_json_is_malformed()
+    {
+        var handler = new StubHandler(HttpStatusCode.OK, "not-json");
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://challenges.cloudflare.com/")
+        };
+        var validator = new ContactTurnstileValidator(
+            client,
+            Options.Create(new ContactTurnstileOptions
+            {
+                Enabled = true,
+                SecretKey = "test-secret",
+                ExpectedAction = "contact_submit",
+                ExpectedHostname = "contact.example.test"
+            }));
+
+        var result = await validator.ValidateAsync("test-token", null, CancellationToken.None);
+
+        Assert.False(result.IsValid);
+        Assert.False(result.IsServiceAvailable);
+    }
+
     [Fact]
     public async Task ValidateAsync_allows_local_request_when_turnstile_is_disabled()
     {
