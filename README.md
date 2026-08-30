@@ -22,7 +22,7 @@ Khi database trống, API chạy EF migrations và seed hai tài khoản demo. S
 
 - **Admin:** `admin@cloud.local`
 - **Editor:** `editor@cloud.local`
-- **Mật khẩu ban đầu:** giá trị `SEED_ADMIN_PASSWORD` trong file `.env` (mẫu trong `.env.example` là `LocalDev#Admin2026!`). Cả hai tài khoản staff dùng cùng mật khẩu seed này trong môi trường phát triển.
+- **Mật khẩu ban đầu:** giá trị `SEED_ADMIN_PASSWORD` trong file `.env` (mẫu trong `.env.example` là `ChangeMe123!`). Cả hai tài khoản staff dùng cùng mật khẩu seed này trong môi trường phát triển.
 - `MSSQL_SA_PASSWORD` chỉ là mật khẩu tài khoản `sa` của SQL Server, không phải mật khẩu đăng nhập website.
 - **Customer:** không seed sẵn; đăng ký tài khoản mới tại `/login` để thực hiện luồng đặt dịch vụ và affiliate.
 
